@@ -1,0 +1,1903 @@
+<!doctype html>
+<html lang="es">
+<head>
+<title>Soccer IA</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="theme-color" content="#F5F3EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12151A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Soccer IA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EC; --surface:#FFFFFF; --surface-2:#FBFAF5; --ink:#171A1E; --muted:#63675C; --line:#E2DECE;
+    --brand:#1B4F72; --brand-soft:#3B7CA6; --brand-tint:#EAF2F8;
+    --seq-1:#EAF2F8; --seq-2:#C7DEEC; --seq-3:#8FBEDA; --seq-4:#4F93BE; --seq-5:#1B4F72;
+    --good:#2F8F5C; --good-tint:#E4F3EC; --warn:#C9A227; --warn-tint:#F7EFD8; --bad:#B5473A; --bad-tint:#F6E5E2;
+    --shadow:0 1px 2px rgba(23,26,30,.06), 0 10px 28px -14px rgba(23,26,30,.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12151A; --surface:#1B2027; --surface-2:#20262E; --ink:#ECE9E0; --muted:#9CA0A6; --line:#2B313A;
+      --brand:#7FB6DA; --brand-soft:#5C9FC4; --brand-tint:#16324A;
+      --seq-1:#16324A; --seq-2:#1E4763; --seq-3:#2E6E93; --seq-4:#5C9FC4; --seq-5:#A9D3EA;
+      --good:#1F9E68; --good-tint:#163B2C; --warn:#B08A1E; --warn-tint:#3A3116; --bad:#B5473A; --bad-tint:#3A211D;
+      --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12151A; --surface:#1B2027; --surface-2:#20262E; --ink:#ECE9E0; --muted:#9CA0A6; --line:#2B313A;
+    --brand:#7FB6DA; --brand-soft:#5C9FC4; --brand-tint:#16324A;
+    --seq-1:#16324A; --seq-2:#1E4763; --seq-3:#2E6E93; --seq-4:#5C9FC4; --seq-5:#A9D3EA;
+    --good:#1F9E68; --good-tint:#163B2C; --warn:#B08A1E; --warn-tint:#3A3116; --bad:#B5473A; --bad-tint:#3A211D;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    margin:0; padding-inline:20px; padding-block:32px 64px;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap{max-width:920px; margin:0 auto; display:flex; flex-direction:column; gap:40px;}
+  h1,h2,h3{font-family:'Big Shoulders Display', 'Arial Narrow', sans-serif; font-weight:800; letter-spacing:.01em; margin:0; text-wrap:balance;}
+  a{color:var(--brand-soft);}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', ui-monospace, monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brand-soft); font-weight:600;
+  }
+  .hero{display:flex; flex-direction:column; gap:14px;}
+  .hero h1{font-size:clamp(40px,7vw,64px); line-height:.95;}
+  .brandrow{display:flex; align-items:center; gap:16px;}
+  .brandmark{width:56px; height:56px; border-radius:14px; box-shadow:var(--shadow); flex:none;}
+  .hero .subtitle{font-size:16px; line-height:1.55; color:var(--muted); max-width:62ch;}
+  .chip{
+    display:inline-flex; align-items:flex-start; gap:8px; font-size:13px; line-height:1.5;
+    background:var(--warn-tint); color:var(--ink); border:1px solid var(--warn); border-radius:10px;
+    padding:10px 14px; max-width:64ch;
+  }
+
+  section{display:flex; flex-direction:column; gap:14px;}
+  .section-head{display:flex; flex-direction:column; gap:4px;}
+  .section-head h2{font-size:28px;}
+  .section-note{color:var(--muted); font-size:14px; max-width:68ch; line-height:1.5;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    padding:22px;
+  }
+
+  /* Termómetro */
+  .league-bars{display:flex; flex-direction:column; gap:10px;}
+  .league-row{display:grid; grid-template-columns:150px 1fr auto; align-items:center; gap:12px;}
+  .league-row .lname{font-weight:600; font-size:14px;}
+  .league-row .lname small{display:block; font-weight:400; color:var(--muted); font-size:11px; font-family:'IBM Plex Mono',monospace;}
+  .track{background:var(--surface-2); border:1px solid var(--line); border-radius:8px; height:22px; position:relative; overflow:hidden;}
+  .fill{height:100%; border-radius:7px 0 0 7px;}
+  .lstats{display:flex; gap:10px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap;}
+  .lstats b{color:var(--ink);}
+  @media (max-width:600px){
+    .league-row{grid-template-columns:1fr; gap:6px;}
+    .lstats{justify-content:flex-start;}
+  }
+
+  /* Calculadora */
+  .pickers{display:flex; flex-direction:column; gap:12px;}
+  .picker-row{display:flex; flex-wrap:wrap; gap:12px; align-items:center;}
+  .picker-row.matchup select{flex:1 1 0; min-width:140px;}
+  select{
+    font-family:'IBM Plex Sans',sans-serif; font-size:14px; font-weight:500; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    min-width:170px; flex:1 1 170px;
+  }
+  #season{min-width:230px; flex-basis:230px; border-color:var(--brand-soft); font-weight:600;}
+  .vs{font-family:'Big Shoulders Display',sans-serif; font-weight:800; color:var(--brand-soft); font-size:18px; flex:0 0 auto;}
+
+  .compare{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;}
+  .compare-card{border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--surface-2);}
+  .compare-card .cname{font-weight:600; font-size:13px; margin-bottom:6px;}
+  .compare-card .crow{display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted); padding:2px 0;}
+  .compare-card .crow b{color:var(--ink); font-weight:600;}
+  .compare-card .cempty{font-size:11.5px; color:var(--muted); font-style:italic;}
+  @media (max-width:520px){ .compare{grid-template-columns:1fr;} }
+
+  .caution{font-size:12px; color:var(--warn); margin-top:10px; font-weight:600;}
+
+  .scoreboard{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:18px;
+  }
+  .scoreboard div{background:var(--surface-2); padding:14px 10px; text-align:center;}
+  .scoreboard .label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:4px;}
+  .scoreboard .value{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:22px;}
+
+  .tiles{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;}
+  .tile{border-radius:12px; padding:16px; border:1px solid var(--line);}
+  .tile .tname{font-size:13px; color:var(--muted); font-weight:600;}
+  .tile .tval{font-family:'Big Shoulders Display',sans-serif; font-size:44px; font-weight:800; line-height:1;}
+  .tile .tstatus{font-size:12px; font-weight:600; margin-top:4px; display:inline-flex; align-items:center; gap:5px;}
+  .tile.good{background:var(--good-tint); border-color:var(--good);}
+  .tile.good .tval, .tile.good .tstatus{color:var(--good);}
+  .tile.warn{background:var(--warn-tint); border-color:var(--warn);}
+  .tile.warn .tval, .tile.warn .tstatus{color:var(--warn);}
+  .tile.bad{background:var(--bad-tint); border-color:var(--bad);}
+  .tile.bad .tval, .tile.bad .tstatus{color:var(--bad);}
+  @media (max-width:520px){ .tiles{grid-template-columns:1fr;} .scoreboard{grid-template-columns:1fr;} }
+
+  .hist{display:flex; align-items:flex-end; gap:8px; height:110px; margin-top:20px; padding-top:20px; border-top:1px solid var(--line);}
+  .hist .bar{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; height:100%;}
+  .hist .bv{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);}
+  .hist .bb{width:100%; border-radius:4px 4px 0 0; background:var(--seq-4);}
+  .hist .bl{font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  .subhead{
+    font-family:'Big Shoulders Display',sans-serif; font-weight:700; font-size:18px;
+    margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
+    display:flex; align-items:center; gap:8px;
+  }
+  .tag{font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); border:1px solid var(--line); border-radius:12px; padding:2px 8px;}
+
+  .outcome-rows{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+  .outcome-row{display:grid; grid-template-columns:110px 1fr 46px; align-items:center; gap:10px;}
+  .outcome-row .oname{font-size:13px; font-weight:600;}
+  .outcome-row .oval{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; text-align:right;}
+  .otrack{background:var(--surface-2); border:1px solid var(--line); border-radius:7px; height:16px; overflow:hidden;}
+  .ofill{height:100%; background:var(--brand-soft); border-radius:6px 0 0 6px;}
+
+  .strategy{margin-top:12px;}
+  .strategy-detail{display:flex; gap:18px; margin-top:10px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--muted);}
+  .strategy-detail b{color:var(--ink);}
+
+  .first-rows{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+
+  .vintage{font-size:12px; color:var(--muted); margin-top:14px; font-family:'IBM Plex Mono',monospace;}
+
+  /* Tabla de datos */
+  .tabs{display:flex; flex-wrap:wrap; gap:6px;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; padding:7px 11px; border-radius:20px;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; font-weight:500;
+  }
+  .tab.active{background:var(--brand); border-color:var(--brand); color:var(--surface);}
+  .subtabs{display:flex; gap:6px; margin-top:10px;}
+  .subtab{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:5px 10px; border-radius:16px;
+    border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; font-weight:500;
+  }
+  .subtab.active{background:var(--brand-tint); border-color:var(--brand-soft); color:var(--brand-soft);}
+  .table-wrap{overflow-x:auto; margin-top:12px; -webkit-overflow-scrolling:touch;}
+  .table-scroll-hint{display:none; font-size:11.5px; color:var(--brand-soft); font-family:'IBM Plex Mono',monospace; margin-top:-6px; margin-bottom:8px;}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:14.5px;}
+  th,td{padding:10px 12px; text-align:right; border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left; position:sticky; left:0; background:var(--surface);}
+  th{font-family:'IBM Plex Mono',monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600;}
+  td{font-family:'IBM Plex Mono',monospace;}
+  td:first-child{font-family:'IBM Plex Sans',sans-serif; font-weight:600;}
+  @media (max-width:640px){
+    table{min-width:720px; font-size:15px;}
+    th,td{padding:11px 13px;}
+    .table-scroll-hint{display:block;}
+  }
+  tr:hover td{background:var(--surface-2);}
+
+  footer{border-top:1px solid var(--line); padding-top:24px; display:flex; flex-direction:column; gap:12px;}
+  footer h2{font-size:22px;}
+  footer p, footer li{color:var(--muted); font-size:13.5px; line-height:1.6;}
+  footer ul{margin:0; padding-left:20px;}
+  .sources{font-size:12.5px; color:var(--muted);}
+  .sources a{color:var(--brand-soft);}
+
+  /* Partidos de la jornada */
+  .asof{font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:-6px;}
+  .fixture-list{display:flex; flex-direction:column; gap:12px; margin-top:12px;}
+  .item-card.played{opacity:.6;}
+  .fbtn{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:var(--surface);
+    background:var(--brand); border:none; border-radius:9px; padding:10px 12px; cursor:pointer; white-space:nowrap;
+  }
+  .fbtn:hover{background:var(--brand-soft);}
+  .fbtn[disabled]{background:transparent; color:var(--muted); border:1px solid var(--line); cursor:default;}
+
+  /* Componente de tarjeta compartido: selección, ranking e historial.
+     Cada dato va en su propia columna (grid), nunca corrido en una sola
+     línea de texto — así se puede leer grande sin que se vea amontonado. */
+  .quickadd-btn{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:var(--good);
+    background:var(--good-tint); border:1px solid var(--good); border-radius:9px; padding:10px 12px; cursor:pointer;
+  }
+  .quickadd-btn:hover{background:var(--good); color:var(--surface);}
+  .quickadd-btn[disabled]{opacity:.6; cursor:default;}
+  .quickadd-btn.added{
+    color:var(--brand); background:var(--brand-tint); border-color:var(--brand-soft); opacity:1; cursor:default;
+  }
+
+  /* Mi selección del día */
+  .add-pick-row{display:flex; justify-content:flex-end; margin-top:14px;}
+  .addbtn{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; color:var(--surface);
+    background:var(--good); border:none; border-radius:9px; padding:10px 16px; cursor:pointer;
+  }
+  .addbtn:hover{opacity:.9;}
+  .addbtn[disabled]{background:var(--line); color:var(--muted); cursor:default;}
+  .summary-tile{
+    display:flex; flex-wrap:wrap; gap:18px; align-items:center; justify-content:space-between;
+    border-radius:12px; padding:16px 18px; border:1px solid var(--line); margin-top:4px;
+  }
+  .summary-tile.good{background:var(--good-tint); border-color:var(--good);}
+  .summary-tile.warn{background:var(--warn-tint); border-color:var(--warn);}
+  .summary-tile.bad{background:var(--bad-tint); border-color:var(--bad);}
+  .summary-tile .sname{font-size:13px; font-weight:600; color:var(--muted);}
+  .summary-tile .sval{font-family:'Big Shoulders Display',sans-serif; font-size:40px; font-weight:800; line-height:1;}
+  .summary-tile.good .sval{color:var(--good);}
+  .summary-tile.warn .sval{color:var(--warn);}
+  .summary-tile.bad .sval{color:var(--bad);}
+  .summary-meta{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:2px;}
+
+  .pick-list{display:flex; flex-direction:column; gap:12px; margin-top:14px;}
+  .item-card{
+    border:1px solid var(--line); border-radius:14px; padding:14px;
+    display:flex; flex-direction:column; gap:10px; background:var(--surface);
+  }
+  .item-card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .item-card-name{font-size:16px; font-weight:700; line-height:1.3;}
+  .item-card-name .idx{color:var(--brand-soft); font-family:'IBM Plex Mono',monospace; margin-right:4px;}
+  .item-card-stats{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .item-stat{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-width:0;}
+  .item-stat .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-family:'IBM Plex Mono',monospace;}
+  .item-stat .val{font-size:24px; font-weight:700; font-family:'IBM Plex Mono',monospace; margin-top:2px; color:var(--ink); overflow-wrap:break-word; line-height:1.15;}
+  .item-stat.good{background:var(--good-tint); border-color:var(--good);}
+  .item-stat.good .val{color:var(--good);}
+  .item-stat.warn{background:var(--warn-tint); border-color:var(--warn);}
+  .item-stat.warn .val{color:var(--warn);}
+  .item-stat.bad{background:var(--bad-tint); border-color:var(--bad);}
+  .item-stat.bad .val{color:var(--bad);}
+  .item-card-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .item-card-actions.single{grid-template-columns:1fr;}
+  .item-card-actions .fbtn, .item-card-actions .quickadd-btn{width:100%; text-align:center;}
+  .pick-remove{
+    font-family:'IBM Plex Mono',monospace; font-size:15px; color:var(--muted); background:transparent;
+    border:1px solid var(--line); border-radius:9px; width:34px; height:34px; cursor:pointer; line-height:1; flex:none;
+  }
+  .pick-remove:hover{color:var(--bad); border-color:var(--bad);}
+  .clearbtn{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted); background:transparent;
+    border:1px solid var(--line); border-radius:8px; padding:6px 11px; cursor:pointer;
+  }
+  .clearbtn:hover{color:var(--bad); border-color:var(--bad);}
+  .empty-note{font-size:13px; color:var(--muted); font-style:italic; padding:8px 0;}
+
+  /* Densidad tipo app móvil nativa: márgenes y aire reducidos, pero con la
+     escala tipográfica de una app (título de fila ~15-16px, texto secundario
+     ~12.5-13px) — nunca letra "de laboratorio" ilegible. */
+  @media (max-width:640px){
+    body{padding-inline:14px; padding-block:14px 32px;}
+    .wrap{gap:16px;}
+    section{gap:6px;}
+    .section-head{gap:1px;}
+    .section-head h2{font-size:19px;}
+    .section-note{font-size:12.5px; line-height:1.35; margin-top:2px;}
+    .card{padding:12px;}
+    .chip{padding:8px 11px; font-size:12px;}
+    .hero{gap:6px;}
+    .hero h1{font-size:30px;}
+    .hero .subtitle{font-size:13.5px; line-height:1.4;}
+    .brandmark{width:36px; height:36px;}
+    .pick-list{gap:10px; margin-top:10px;}
+    .item-card{padding:12px; gap:8px;}
+    .item-card-name{font-size:15.5px;}
+    .item-stat{padding:9px 10px;}
+    .item-stat .val{font-size:21px;}
+    .item-stat .lbl{font-size:10.5px;}
+    .item-card-actions .fbtn, .item-card-actions .quickadd-btn{font-size:12px; padding:9px 6px;}
+    .pick-remove{width:30px; height:30px; font-size:13px;}
+    .stat-grid .stat{padding:6px 5px;}
+    .stat-grid .stat b{font-size:15px;}
+    .stat-grid .stat small{font-size:9.5px;}
+    .subhead{font-size:16px; margin-top:12px; padding-top:10px;}
+  }
+
+  /* Toggle de tema */
+  .theme-toggle{
+    position:fixed; top:16px; right:16px; z-index:50;
+    width:40px; height:40px; border-radius:50%;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow); padding:0; line-height:1;
+  }
+  .theme-toggle:hover{ background:var(--surface-2); }
+  @media (max-width:480px){ .theme-toggle{ top:10px; right:10px; width:34px; height:34px; font-size:14px; } }
+
+  /* Selección destacada arriba */
+  .selection-card{
+    border:2px solid var(--brand-soft);
+    box-shadow:0 8px 26px -10px rgba(27,79,114,.4), var(--shadow);
+  }
+
+  /* Cuadro de cálculo matemático (goles esperados) */
+  .calc-box{
+    border:1px solid var(--brand-soft); background:var(--brand-tint); border-radius:12px;
+    padding:16px 18px; margin-top:14px; color:var(--ink);
+  }
+  .calc-box .calc-title{
+    font-family:'Big Shoulders Display',sans-serif; font-size:16px; font-weight:700; color:var(--brand-soft); margin-bottom:8px;
+  }
+  .calc-box .calc-line{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.7; color:var(--ink);
+  }
+  .calc-box .calc-line b{color:var(--brand-soft);}
+  .calc-box .calc-total{
+    font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:700; color:var(--brand-soft);
+    border-top:1px dashed var(--brand-soft); padding-top:8px; margin-top:8px;
+  }
+  .calc-box .calc-note{font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--muted); margin-top:8px;}
+  .calc-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .calc-table{width:100%; min-width:460px; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  .calc-table th{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; text-align:right; padding:3px 6px;}
+  .calc-table th:first-child, .calc-table td:first-child{text-align:left;}
+  .calc-table td{padding:6px; text-align:right; border-top:1px solid var(--brand-soft); border-top-style:dashed;}
+  .calc-table td:first-child{font-family:'IBM Plex Sans',sans-serif; font-weight:600; color:var(--ink);}
+  .calc-table td b{color:var(--brand-soft);}
+
+  /* Poder de ataque y defensa: grid de datos */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;}
+  .stat-grid .stat{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 6px; text-align:center;}
+  .stat-grid .stat b{display:block; font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; color:var(--ink); line-height:1.2;}
+  .stat-grid .stat small{font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+
+  /* Hora de partidos pendientes */
+  .fdate .ftime{display:block; margin-top:2px;}
+  .fhint{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; margin-top:2px;}
+  .fhint.live{color:var(--warn);}
+  .fhint.over{color:var(--bad);}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar modo claro/oscuro" title="Cambiar modo claro/oscuro">🌙</button>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Modelo de Poisson · goles, resultado y marcador</div>
+    <div class="brandrow">
+      <img src="icon-192.png" class="brandmark" alt="Soccer IA" width="56" height="56">
+      <h1>Soccer IA</h1>
+    </div>
+    <p class="subtitle">Probabilidad de goles, resultado y marcador — calculado con datos reales de cada equipo.</p>
+    <div class="chip">⚠️ Modelo estadístico, no garantía de resultado. Juega con responsabilidad.</div>
+  </header>
+
+  <section id="selection" class="spotlight">
+    <div class="section-head">
+      <h2>⭐ Mi selección del día</h2>
+      <p class="section-note">Ganas si el marcador final no es 1-0 ni 0-1. Si va así temporalmente, sigues vivo hasta que se anote otro gol.</p>
+    </div>
+    <div class="card selection-card" id="selectionCard">
+      <div id="selectionSummary"></div>
+      <div class="pick-list" id="pickList"></div>
+      <div class="subhead" style="margin-top:16px;">📊 Historial de aciertos</div>
+      <div id="trackRecord"></div>
+      <div class="add-pick-row" id="clearRow" style="display:none;">
+        <button class="clearbtn" id="clearPicksBtn">Vaciar selección del día</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="ranking">
+    <div class="section-head">
+      <h2>🏆 Mejores partidos del día</h2>
+      <p class="section-note">Partidos sin jugar, ordenados por probabilidad de tu estrategia.</p>
+    </div>
+    <div class="card">
+      <div class="tabs" id="rankingLimitTabs"></div>
+      <div class="pick-list" id="rankingList"></div>
+    </div>
+  </section>
+
+  <section id="thermometer">
+    <div class="section-head">
+      <h2>Termómetro de goles por competición</h2>
+      <p class="section-note">Promedio de goles por partido y probabilidad base de Over 1.5 / 2.5 por liga.</p>
+    </div>
+    <div class="card">
+      <div class="league-bars" id="leagueBars"></div>
+    </div>
+  </section>
+
+  <section id="fixtures">
+    <div class="section-head">
+      <h2>Partidos de esta jornada</h2>
+      <p class="section-note" id="fixturesAsOf">Toca "Analizar" para cargar un partido en la calculadora.</p>
+    </div>
+    <div class="card">
+      <div class="tabs" id="fixtureTabs"></div>
+      <div class="fixture-list" id="fixtureList"></div>
+    </div>
+  </section>
+
+  <section id="calculator">
+    <div class="section-head">
+      <h2>Calculadora de partido</h2>
+      <p class="section-note">Elige competición, temporada y equipos.</p>
+    </div>
+    <div class="card">
+      <div class="pickers">
+        <div class="picker-row">
+          <select id="competition"></select>
+          <select id="season"></select>
+        </div>
+        <div class="picker-row matchup">
+          <select id="homeTeam"></select>
+          <span class="vs">VS</span>
+          <select id="awayTeam"></select>
+        </div>
+      </div>
+
+      <div class="compare" id="compare"></div>
+      <div class="caution" id="caution" style="display:none;"></div>
+
+      <div class="scoreboard">
+        <div><div class="label">Local (λ)</div><div class="value" id="lamHome">–</div></div>
+        <div><div class="label">Visitante (λ)</div><div class="value" id="lamAway">–</div></div>
+        <div><div class="label">Total esperado</div><div class="value" id="lamTotal">–</div></div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile" id="tile15">
+          <div class="tname">Probabilidad Over 1.5 goles</div>
+          <div class="tval" id="p15">–</div>
+          <div class="tstatus" id="s15"></div>
+        </div>
+        <div class="tile" id="tile25">
+          <div class="tname">Probabilidad Over 2.5 goles</div>
+          <div class="tval" id="p25">–</div>
+          <div class="tstatus" id="s25"></div>
+        </div>
+      </div>
+
+      <div class="hist" id="hist"></div>
+
+      <div class="subhead">Poder de ataque y defensa: local vs visitante <span class="tag">datos reales de temporada</span></div>
+      <div class="compare" id="teamProfile"></div>
+      <div class="calc-box" id="matchMath"></div>
+
+      <div class="subhead">¿Quién gana?</div>
+      <div class="outcome-rows" id="resultRows"></div>
+
+      <div class="subhead">Tu estrategia: 2+ goles y que NO termine 1-0 ni 0-1</div>
+      <p class="section-note" style="margin-top:-6px;">Ganas si el marcador final no es 1-0, 0-1 ni 0-0.</p>
+      <div class="strategy">
+        <div class="tile" id="tileSignal">
+          <div class="tname">Probabilidad de más de 1.5 goles <span class="tag">excluye 1-0 y 0-1</span></div>
+          <div class="tval" id="pSignal">–</div>
+          <div class="tstatus" id="sSignal"></div>
+        </div>
+        <div class="strategy-detail">
+          <span>P(1-0) <b id="p10">–</b></span>
+          <span>P(0-1) <b id="p01">–</b></span>
+          <span>P(0-0) <b id="p00">–</b></span>
+        </div>
+      </div>
+
+      <div class="subhead">¿Quién anota primero? <span class="tag">estimación</span></div>
+      <p class="section-note" style="margin-top:-6px;">Estimación según el ritmo de gol de cada equipo, no un dato histórico real.</p>
+      <div class="first-rows" id="firstRows"></div>
+
+      <div class="subhead">🔬 Refinamientos estadísticos <span class="tag">sobre el mismo λ</span></div>
+      <p class="section-note" style="margin-top:-6px;">Ajustes sobre los mismos λ — no cambian tu selección guardada.</p>
+      <div id="modelCompare"></div>
+
+      <div class="subhead" style="margin-top:16px; padding-top:0; border-top:none;">Distribución de diferencia de goles <span class="tag">Skellam</span></div>
+      <div class="hist" id="skellamHist"></div>
+
+      <div class="vintage" id="vintageNote"></div>
+
+      <div class="add-pick-row">
+        <button class="addbtn" id="addPickBtn">+ Agregar a mi selección del día</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="datatable">
+    <div class="section-head">
+      <h2>Datos por equipo</h2>
+      <p class="section-note">Goles por partido e índices de ataque/defensa (1.00 = promedio de liga).</p>
+    </div>
+    <div class="card">
+      <div class="tabs" id="tabs"></div>
+      <div class="subtabs" id="subtabs"></div>
+      <p class="table-scroll-hint">↔ Desliza para ver todas las columnas</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Equipo</th><th>PJ</th><th>GF</th><th>GC</th><th>GF/PJ</th><th>GC/PJ</th><th>Ataque</th><th>Defensa</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <h2>Metodología y fuentes</h2>
+    <p><b>Modelo:</b> los goles totales de un partido se modelan como la suma de dos variables de Poisson independientes (goles del local y goles del visitante). Para cada equipo se calcula un índice de <b>ataque</b> (goles anotados por partido ÷ promedio de goles por equipo de su liga/temporada) y de <b>defensa</b> (goles recibidos por partido ÷ ese mismo promedio). El gol esperado (λ) del local es: promedio de la liga × ataque del local × defensa del visitante × 1.15 (factor de localía); el del visitante usa 0.90 en vez de 1.15.</p>
+    <p><b>Resultado (1X2) y marcador exacto:</b> con λ_local y λ_visitante se construye la distribución conjunta de Poisson (goles del local independientes de los del visitante) y se suman las combinaciones donde gana el local, hay empate o gana el visitante. Los marcadores 1-0 y 0-1 se calculan directo de esa misma tabla — por eso la "señal" de tu estrategia es la probabilidad exacta de que el partido NO caiga en esos dos marcadores, no una aproximación con Over 1.5.</p>
+    <p><b>¿Quién anota primero?:</b> es una estimación simple — la proporción del gol esperado de cada equipo sobre el total (λ_equipo ÷ λ_total), asumiendo que el ritmo de gol de cada quien es constante durante el partido. No usa datos reales de "quién anotó primero" en partidos pasados, así que tómalo con más cautela que el resto de los números.</p>
+    <p><b>Comparación de temporadas:</b> para las 7 ligas europeas puedes alternar entre la temporada 2025/26 (completa, 34-38 jornadas — la más confiable) y la 2026/27 (en curso, apenas 2-5 jornadas en la mayoría de los equipos). Cuando ambos equipos existen en las dos temporadas, se muestra una comparación lado a lado arriba del calculador. Con muestras tan chicas, un par de resultados puede mover mucho el promedio — el aviso amarillo te lo señala cuando aplica. Liga MX (Apertura 2026) y MLS (temporada 2026) solo tienen la temporada en curso disponible aquí.</p>
+    <p><b>Champions League:</b> al elegir esta opción puedes cruzar equipos de distintas ligas europeas, usando su temporada 2025/26 completa (la más estable para comparar entre ligas). El modelo promedia el nivel de ambas ligas de origen y reescala el total esperado al promedio real de la fase de liga 2025/26 de la Champions (3.39 goles por partido), más alto que cualquier liga doméstica.</p>
+    <p><b>Refinamientos estadísticos (Dixon-Coles, Poisson bivariado, Skellam):</b> se calculan sobre los mismos λ_local y λ_visitante del modelo base. Dixon-Coles corrige la sobre/subestimación que tiene el Poisson simple en marcadores bajos (0-0, 1-0, 0-1, 1-1), usando un parámetro ρ; el Poisson bivariado le suma un componente de covarianza λ₃ entre ambos equipos. Ambos parámetros (ρ = -0.13, λ₃ = 0.12) son valores típicos publicados en la literatura académica de modelos de gol en fútbol, no ajustados por liga ni por partido — eso requeriría el historial completo de resultados de la temporada, y aquí solo se tiene el acumulado de goles por equipo. Úsalos como referencia de hacia dónde se mueve la probabilidad, no como el número final. La distribución de Skellam muestra la probabilidad de cada diferencia de goles posible (quién gana y por cuánto), derivada de los mismos λ sin parámetros extra.</p>
+    <p><b>Sobre meter capital:</b> este dashboard no calcula "valor esperado" real porque eso depende de la cuota que te da tu casa de apuestas, que aquí no se conoce. Una probabilidad alta de acertar NO es lo mismo que una apuesta rentable — entre más "segura" parezca una jugada, normalmente peor paga. Usa estos números como termómetro de confianza, no como una señal de compra automática.</p>
+    <p class="sources">Fuentes — temporadas 2025/26 completas y 2026/27 en curso vía tablas de Wikipedia: <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Premier_League" target="_blank">Premier League 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_La_Liga" target="_blank">La Liga 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_La_Liga" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Serie_A" target="_blank">Serie A 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Serie_A" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Bundesliga" target="_blank">Bundesliga 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Bundesliga" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Ligue_1" target="_blank">Ligue 1 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Ligue_1" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Eredivisie" target="_blank">Eredivisie 25/26</a>, <a href="https://www.fcupdate.nl/voetbalcompetities/nederland/eredivisie/stand/2026-2027" target="_blank">26/27 (FCUpdate.nl)</a> · <a href="https://en.wikipedia.org/wiki/2025%E2%80%9326_Primeira_Liga" target="_blank">Primeira Liga 25/26</a>, <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Primeira_Liga" target="_blank">26/27</a> · <a href="https://en.wikipedia.org/wiki/2026%E2%80%9327_Liga_MX_season" target="_blank">Liga MX Apertura 2026</a> · <a href="https://en.wikipedia.org/wiki/2026_Major_League_Soccer_season" target="_blank">MLS 2026</a> · <a href="https://www.uefa.com/uefachampionsleague/news/02a1-1fcc311e5da5-2860e8958115-1000--champions-league-2025-26-league-phase-in-numbers/" target="_blank">UEFA.com, fase de liga Champions 25/26</a>.</p>
+  </footer>
+
+</div>
+
+<script>
+const HOME_ADV = 1.15, AWAY_ADV = 0.90;
+const UCL_AVG_TOTAL = 3.39;
+const EURO_LEAGUES = ["Premier League","La Liga","Serie A","Bundesliga","Ligue 1","Eredivisie","Primeira Liga"];
+const SMALL_SAMPLE = 8; // PJ threshold below which we show a caution note
+
+function T(n,p,gf,ga){ return {n,p,gf,ga}; }
+
+const LEAGUES = {
+"Premier League": {country:"Inglaterra", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("Manchester City",3,7,2),T("Arsenal",2,4,0),T("Hull City",2,3,0),T("Chelsea",2,7,5),T("Liverpool",3,6,4),
+    T("Brentford",2,4,1),T("Newcastle United",3,5,6),T("Everton",2,3,1),T("Leeds United",3,6,2),T("Brighton",3,12,4),
+    T("Manchester United",3,5,5),T("Sunderland",2,2,2),T("Ipswich Town",3,4,8),T("Bournemouth",2,2,3),T("Nottingham Forest",2,2,3),
+    T("Fulham",2,2,4),T("Coventry City",3,0,9),T("Crystal Palace",2,1,6),T("Aston Villa",2,0,5),T("Tottenham Hotspur",2,0,5)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Arsenal",38,71,27),T("Manchester City",38,77,35),T("Manchester United",38,69,50),T("Aston Villa",38,56,49),
+    T("Liverpool",38,63,53),T("Bournemouth",38,58,54),T("Sunderland",38,42,48),T("Brighton",38,52,46),
+    T("Brentford",38,55,52),T("Chelsea",38,58,52),T("Fulham",38,47,51),T("Newcastle United",38,53,55),
+    T("Everton",38,47,50),T("Leeds United",38,49,56),T("Crystal Palace",38,41,51),T("Nottingham Forest",38,48,51),
+    T("Tottenham Hotspur",38,48,57),T("West Ham United",38,46,65),T("Burnley",38,38,75),T("Wolverhampton Wanderers",38,27,68)
+  ]},
+}},
+"La Liga": {country:"España", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("Atlético Madrid",4,10,3),T("Alavés",4,6,1),T("Barcelona",3,11,2),T("Real Madrid",3,9,4),T("Sevilla",3,6,5),
+    T("Real Betis",4,6,6),T("Osasuna",2,2,1),T("Levante",4,7,9),T("Racing Santander",3,5,5),T("Espanyol",4,5,5),
+    T("Getafe",3,2,4),T("Real Sociedad",4,3,9),T("Deportivo A Coruña",3,3,3),T("Villarreal",4,5,7),T("Rayo Vallecano",3,3,3),
+    T("Celta Vigo",3,2,3),T("Valencia",3,0,2),T("Málaga",3,2,4),T("Elche",4,5,12),T("Athletic Bilbao",2,1,5)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Barcelona",38,95,36),T("Real Madrid",38,77,35),T("Villarreal",38,72,46),T("Atlético Madrid",38,62,44),
+    T("Real Betis",38,59,48),T("Celta Vigo",38,53,48),T("Getafe",38,32,38),T("Rayo Vallecano",38,41,44),
+    T("Valencia",38,46,55),T("Real Sociedad",38,59,61),T("Espanyol",38,43,55),T("Athletic Bilbao",38,43,58),
+    T("Sevilla",38,46,60),T("Alavés",38,44,56),T("Elche",38,49,57),T("Levante",38,47,61),
+    T("Osasuna",38,44,50),T("Mallorca",38,47,57),T("Girona",38,39,55),T("Real Oviedo",38,26,60)
+  ]},
+}},
+"Serie A": {country:"Italia", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("Inter de Milán",4,13,6),T("Como",4,9,4),T("Roma",3,10,0),T("AC Milan",2,4,1),T("Juventus",3,5,3),
+    T("Atalanta",2,3,1),T("Lazio",2,2,0),T("Udinese",3,7,8),T("Frosinone",2,3,1),T("Napoli",4,6,5),
+    T("Sassuolo",3,6,5),T("Cagliari",2,1,1),T("Torino",4,4,7),T("Lecce",3,5,6),T("Bologna",3,0,3),
+    T("Parma",3,1,5),T("Monza",3,5,10),T("Venezia",2,0,4),T("Genoa",3,1,7),T("Fiorentina",3,1,9)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Inter de Milán",38,89,35),T("Napoli",38,58,36),T("Roma",38,59,31),T("Como",38,65,29),
+    T("AC Milan",38,53,35),T("Juventus",38,61,34),T("Atalanta",38,51,36),T("Bologna",38,49,46),
+    T("Lazio",38,41,40),T("Udinese",38,45,48),T("Sassuolo",38,46,50),T("Torino",38,44,63),
+    T("Parma",38,28,46),T("Cagliari",38,40,53),T("Fiorentina",38,41,50),T("Genoa",38,41,51),
+    T("Lecce",38,28,50),T("Cremonese",38,32,57),T("Hellas Verona",38,25,61),T("Pisa",38,26,71)
+  ]},
+}},
+"Bundesliga": {country:"Alemania", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("SC Friburgo",2,5,1),T("Borussia Dortmund",2,5,2),T("SV Elversberg",3,8,7),T("Bayern Múnich",3,7,2),
+    T("Bayer Leverkusen",2,6,3),T("FC Augsburgo",1,3,0),T("RB Leipzig",3,9,3),T("VfB Stuttgart",2,5,6),
+    T("Werder Bremen",2,4,5),T("1. FC Colonia",2,4,6),T("Eintracht Frankfurt",1,3,3),T("Mainz 05",1,0,0),
+    T("SC Paderborn",2,0,1),T("Schalke 04",2,0,3),T("Union Berlin",2,3,7),T("TSG Hoffenheim",2,4,6),
+    T("Hamburgo SV",2,0,7),T("Borussia M'gladbach",2,3,7)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Bayern Múnich",34,122,36),T("Borussia Dortmund",34,70,34),T("RB Leipzig",34,66,47),T("VfB Stuttgart",34,71,49),
+    T("TSG Hoffenheim",34,65,52),T("Bayer Leverkusen",34,68,47),T("SC Friburgo",34,51,57),T("Eintracht Frankfurt",34,61,65),
+    T("FC Augsburgo",34,45,61),T("Mainz 05",34,44,53),T("Union Berlin",34,44,58),T("Borussia M'gladbach",34,42,53),
+    T("Hamburgo SV",34,40,54),T("1. FC Colonia",34,49,63),T("Werder Bremen",34,37,60),T("VfL Wolfsburgo",34,45,69),
+    T("1. FC Heidenheim",34,41,72),T("FC St. Pauli",34,29,60)
+  ]},
+}},
+"Ligue 1": {country:"Francia", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("Mónaco",3,5,1),T("Lyon",3,6,2),T("Lille",4,7,2),T("Paris FC",2,3,0),T("Rennes",2,5,4),
+    T("Troyes",3,2,3),T("Lorient",3,2,2),T("Marsella",2,4,2),T("Lens",4,8,7),T("Angers",2,3,3),
+    T("Estrasburgo",2,2,5),T("Brest",3,4,5),T("Le Mans",4,7,8),T("Paris Saint-Germain",4,6,6),
+    T("Niza",3,1,4),T("Le Havre",2,1,2),T("Toulouse",3,2,5),T("Auxerre",3,4,11)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Paris Saint-Germain",34,74,29),T("Lens",34,66,35),T("Lille",34,52,37),T("Lyon",34,53,40),
+    T("Marsella",34,63,45),T("Rennes",34,59,50),T("Mónaco",34,60,54),T("Estrasburgo",34,58,47),
+    T("Toulouse",34,47,46),T("Lorient",34,48,51),T("Paris FC",34,47,50),T("Brest",34,43,55),
+    T("Angers",34,29,48),T("Le Havre",34,32,44),T("Auxerre",34,34,44),T("Niza",34,37,60),
+    T("Nantes",34,29,52),T("Metz",34,32,76)
+  ]},
+}},
+"Eredivisie": {country:"Países Bajos", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("AZ Alkmaar",5,16,5),T("PSV Eindhoven",6,22,7),T("Feyenoord",6,20,7),T("Excelsior",6,13,7),
+    T("Twente",5,10,5),T("Fortuna Sittard",5,11,9),T("Go Ahead Eagles",5,14,12),T("Ajax",4,9,5),
+    T("NEC Nimega",5,11,9),T("Groningen",5,11,12),T("Sparta Rotterdam",6,10,13),T("Heerenveen",6,7,9),
+    T("PEC Zwolle",6,6,17),T("Telstar",6,5,11),T("Utrecht",6,11,19),T("Willem II",4,4,13),
+    T("ADO Den Haag",5,6,14),T("SC Cambuur",5,6,18)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("PSV Eindhoven",34,101,45),T("Feyenoord",34,70,44),T("NEC Nimega",34,77,53),T("Twente",34,59,40),
+    T("Ajax",34,62,41),T("Utrecht",34,55,42),T("AZ Alkmaar",34,58,51),T("Heerenveen",34,57,53),
+    T("Groningen",34,49,45),T("Sparta Rotterdam",34,40,62),T("Fortuna Sittard",34,49,63),T("Go Ahead Eagles",34,54,53),
+    T("Excelsior",34,43,56),T("Telstar",34,49,55),T("PEC Zwolle",34,44,71),T("Volendam",34,35,55),
+    T("NAC Breda",34,35,58),T("Heracles Almelo",34,35,85)
+  ]},
+}},
+"Primeira Liga": {country:"Portugal", seasons:{
+  "2026-27":{label:"Temporada 2026/27 (en curso)", teams:[
+    T("Porto",4,9,0),T("Sporting CP",5,13,6),T("Arouca",5,8,5),T("Santa Clara",5,7,4),T("Marítimo",5,7,8),
+    T("Gil Vicente",3,4,3),T("Estrela da Amadora",4,10,9),T("Benfica",3,12,3),T("Nacional",4,6,6),
+    T("Vitória de Guimarães",3,3,4),T("Rio Ave",5,5,10),T("Académico de Viseu",4,4,8),T("Alverca",4,4,8),
+    T("Braga",2,3,2),T("Famalicão",4,3,5),T("Moreirense",3,5,7),T("Estoril Praia",4,1,6),T("Casa Pia",3,0,10)
+  ]},
+  "2025-26":{label:"Temporada 2025/26 (completa)", teams:[
+    T("Porto",34,66,18),T("Sporting CP",34,89,24),T("Benfica",34,74,25),T("Braga",34,64,36),
+    T("Famalicão",34,42,29),T("Gil Vicente",34,47,38),T("Moreirense",34,37,49),T("Arouca",34,47,64),
+    T("Vitória de Guimarães",34,39,51),T("Estoril Praia",34,54,57),T("Alverca",34,35,52),T("Rio Ave",34,35,57),
+    T("Santa Clara",34,32,41),T("Nacional",34,37,45),T("Estrela da Amadora",34,38,56),T("Casa Pia",34,31,57),
+    T("Tondela",34,27,55),T("AVS",34,27,67)
+  ]},
+}},
+"Liga MX": {country:"México", seasons:{
+  "actual":{label:"Apertura 2026 (en curso, jornada 8)", teams:[
+    T("América",7,15,6),T("Toluca",7,17,6),T("Tijuana",6,10,7),T("Atlas",7,11,13),
+    T("Guadalajara",7,12,6),T("Querétaro",6,9,7),T("León",7,10,6),T("Puebla",6,9,9),
+    T("Monterrey",7,13,10),T("Cruz Azul",7,15,14),T("Pachuca",7,10,8),T("Pumas UNAM",7,8,11),
+    T("Necaxa",6,8,11),T("Atlético San Luis",7,8,12),T("Atlante",6,6,8),T("Tigres UANL",7,8,10),
+    T("Santos Laguna",7,6,12),T("Juárez",8,4,23)
+  ]},
+}},
+"MLS": {country:"Estados Unidos / Canadá", seasons:{
+  "actual":{label:"Temporada 2026 (en curso, ~23 partidos por equipo)", teams:[
+    T("Nashville SC",23,49,19),T("Inter Miami CF",23,58,43),T("Chicago Fire FC",22,40,30),T("New England Revolution",23,38,28),
+    T("Charlotte FC",23,43,35),T("FC Cincinnati",23,52,54),T("New York City FC",23,38,31),T("New York Red Bulls",23,33,46),
+    T("Orlando City SC",23,40,54),T("Toronto FC",23,32,41),T("D.C. United",23,28,36),T("Philadelphia Union",23,39,39),
+    T("Atlanta United FC",23,25,38),T("CF Montréal",23,30,47),T("Columbus Crew",23,31,40),
+    T("Vancouver Whitecaps FC",22,49,20),T("Houston Dynamo FC",23,30,27),T("Los Angeles FC",24,37,25),
+    T("San Jose Earthquakes",23,40,33),T("FC Dallas",23,43,38),T("St. Louis City SC",23,37,32),
+    T("Colorado Rapids",23,32,28),T("San Diego FC",23,40,38),T("Minnesota United FC",23,32,36),
+    T("Real Salt Lake",22,34,35),T("Portland Timbers",23,40,41),T("Seattle Sounders FC",22,25,30),
+    T("LA Galaxy",24,29,36),T("Austin FC",23,30,42),T("Sporting Kansas City",23,23,55)
+  ]},
+}},
+};
+
+// Partidos reales de la jornada en curso al 12 de septiembre de 2026 (ver fuentes en el pie de página).
+// season: la key dentro de seasons[] de cada liga que corresponde a este partido.
+function M(date, home, away, opts){ return Object.assign({date, home, away}, opts||{}); }
+const FIXTURES = {
+"Premier League": {round:"Jornada 5", season:"2026-27", matches:[
+  M("Vie 18 sep","Brentford","Chelsea",{time:"13:00"}),
+  M("Sáb 19 sep","Tottenham Hotspur","Aston Villa",{time:"05:30"}),
+  M("Sáb 19 sep","Brighton","Arsenal",{time:"08:00"}),
+  M("Sáb 19 sep","Everton","Ipswich Town",{time:"08:00"}),
+  M("Sáb 19 sep","Newcastle United","Hull City",{time:"08:00"}),
+  M("Sáb 19 sep","Nottingham Forest","Coventry City",{time:"10:30"}),
+  M("Dom 20 sep","Bournemouth","Liverpool",{time:"07:00"}),
+  M("Dom 20 sep","Leeds United","Crystal Palace",{time:"07:00"}),
+  M("Dom 20 sep","Manchester City","Sunderland",{time:"07:00"}),
+  M("Dom 20 sep","Fulham","Manchester United",{time:"09:30"}),
+]},
+"La Liga": {round:"Jornada 6 (parcial)", season:"2026-27", matches:[
+  M("Mar 15 sep","Rayo Vallecano","Espanyol",{played:true, score:"1-0"}),
+  M("Mar 15 sep","Alavés","Valencia",{played:true, score:"1-0"}),
+  M("Mar 15 sep","Elche","Real Madrid",{played:true, score:"2-3"}),
+  M("Mié 16 sep","Atlético Madrid","Osasuna",{time:"11:00"}),
+  M("Mié 16 sep","Deportivo A Coruña","Sevilla",{time:"11:00"}),
+  M("Mié 16 sep","Levante","Athletic Bilbao",{time:"13:30"}),
+  M("Mié 16 sep","Barcelona","Racing Santander",{time:"13:30"}),
+  M("Jue 17 sep","Real Betis","Getafe",{time:"11:00"}),
+  M("Jue 17 sep","Málaga","Villarreal",{time:"13:30"}),
+]},
+"Serie A": {round:"Giornata 5", season:"2026-27", matches:[
+  M("Vie 18 sep","Monza","Sassuolo",{time:"12:45"}),
+  M("Sáb 19 sep","Bologna","Torino",{time:"07:00"}),
+  M("Sáb 19 sep","Udinese","Cagliari",{time:"07:00"}),
+  M("Sáb 19 sep","Roma","Inter de Milán",{time:"10:00"}),
+  M("Sáb 19 sep","Venezia","Lazio",{time:"12:45"}),
+  M("Dom 20 sep","Fiorentina","Napoli",{time:"04:30"}),
+  M("Dom 20 sep","Frosinone","Como",{time:"07:00"}),
+  M("Dom 20 sep","Parma","Genoa",{time:"07:00"}),
+  M("Dom 20 sep","Juventus","Atalanta",{time:"10:00"}),
+  M("Dom 20 sep","AC Milan","Lecce",{time:"12:45"}),
+]},
+"Bundesliga": {round:"Spieltag 4", season:"2026-27", matches:[
+  M("Vie 18 sep","Bayern Múnich","Union Berlin",{time:"10:30"}),
+  M("Sáb 19 sep","Werder Bremen","FC Augsburgo",{time:"05:30"}),
+  M("Sáb 19 sep","Hamburgo SV","1. FC Colonia",{time:"05:30"}),
+  M("Sáb 19 sep","Borussia M'gladbach","Mainz 05",{time:"05:30"}),
+  M("Sáb 19 sep","Eintracht Frankfurt","SC Friburgo",{time:"05:30"}),
+  M("Sáb 19 sep","VfB Stuttgart","Borussia Dortmund",{time:"08:30"}),
+  M("Dom 20 sep","Bayer Leverkusen","RB Leipzig",{time:"05:30"}),
+  M("Dom 20 sep","Schalke 04","SV Elversberg",{time:"07:30"}),
+  M("Dom 20 sep","SC Paderborn","TSG Hoffenheim",{time:"09:30"}),
+]},
+"Ligue 1": {round:"Journée 5", season:"2026-27", matches:[
+  M("Vie 18 sep","Mónaco","Lens",{time:"12:45"}),
+  M("Sáb 19 sep","Paris FC","Estrasburgo",{time:"09:15"}),
+  M("Sáb 19 sep","Lyon","Rennes",{time:"12:45"}),
+  M("Sáb 19 sep","Toulouse","Le Havre",{time:"12:45"}),
+  M("Sáb 19 sep","Le Mans","Lorient",{time:"12:45"}),
+  M("Sáb 19 sep","Angers","Troyes",{time:"12:45"}),
+  M("Dom 20 sep","Auxerre","Brest",{time:"07:00"}),
+  M("Dom 20 sep","Niza","Lille",{time:"09:15"}),
+  M("Dom 20 sep","Marsella","Paris Saint-Germain",{time:"12:45"}),
+]},
+"Eredivisie": {round:"Speelronde (parcial)", season:"2026-27", matches:[
+  M("Sáb 12 sep","Twente","ADO Den Haag",{played:true, score:"2-0"}),
+  M("Sáb 12 sep","Go Ahead Eagles","Groningen",{played:true, score:"2-2"}),
+  M("Sáb 12 sep","Fortuna Sittard","Ajax",{played:true, score:"1-5"}),
+  M("Sáb 12 sep","SC Cambuur","NEC Nimega",{played:true, score:"3-0"}),
+  M("Dom 13 sep","Excelsior","Utrecht",{played:true, score:"1-2"}),
+  M("Dom 13 sep","Heerenveen","Telstar",{played:true, score:"0-0"}),
+  M("Dom 13 sep","PEC Zwolle","Feyenoord",{played:true, score:"0-7"}),
+  M("Dom 13 sep","PSV Eindhoven","Sparta Rotterdam",{played:true, score:"4-1"}),
+]},
+"Primeira Liga": {round:"Jornada 7", season:"2026-27", matches:[
+  M("Sáb 19 sep","Gil Vicente","Marítimo",{time:"08:30"}),
+  M("Sáb 19 sep","Nacional","Famalicão",{time:"08:30"}),
+  M("Sáb 19 sep","Alverca","Rio Ave",{time:"11:00"}),
+  M("Sáb 19 sep","Sporting CP","Arouca",{time:"13:30"}),
+  M("Dom 20 sep","Estrela da Amadora","Académico de Viseu",{time:"08:30"}),
+  M("Dom 20 sep","Vitória de Guimarães","Moreirense",{time:"08:30"}),
+  M("Dom 20 sep","Estoril Praia","Casa Pia",{time:"11:00"}),
+  M("Dom 20 sep","Santa Clara","Braga",{time:"11:00"}),
+  M("Dom 20 sep","Porto","Benfica",{time:"13:30"}),
+]},
+"Liga MX": {round:"Jornada 9", season:"actual", matches:[
+  M("Mar 15 sep","Puebla","Toluca",{time:"19:00"}),
+  M("Vie 18 sep","Puebla","Atlante",{time:"19:00"}),
+  M("Vie 18 sep","Juárez","Tigres UANL",{time:"21:00"}),
+  M("Sáb 19 sep","Atlas","Pumas UNAM",{time:"17:00"}),
+  M("Sáb 19 sep","Atlético San Luis","Necaxa",{time:"17:00"}),
+  M("Sáb 19 sep","Monterrey","Cruz Azul",{time:"19:00"}),
+  M("Sáb 19 sep","América","Guadalajara",{time:"21:00"}),
+  M("Dom 20 sep","Pachuca","Tijuana",{time:"18:00"}),
+  M("Dom 20 sep","Toluca","Santos Laguna",{time:"18:00"}),
+  M("Dom 20 sep","Querétaro","León",{time:"20:00"}),
+]},
+"MLS": {round:"Fecha regular", season:"actual", matches:[
+  M("Vie 18 sep","New York City FC","New York Red Bulls",{time:"17:30"}),
+  M("Sáb 19 sep","CF Montréal","Columbus Crew",{time:"17:30"}),
+  M("Sáb 19 sep","D.C. United","Charlotte FC",{time:"17:30"}),
+  M("Sáb 19 sep","New England Revolution","Orlando City SC",{time:"17:30"}),
+  M("Sáb 19 sep","San Jose Earthquakes","Los Angeles FC",{time:"17:30"}),
+  M("Sáb 19 sep","FC Dallas","Austin FC",{time:"18:30"}),
+  M("Sáb 19 sep","Houston Dynamo FC","FC Cincinnati",{time:"18:30"}),
+  M("Sáb 19 sep","Minnesota United FC","LA Galaxy",{time:"18:30"}),
+  M("Sáb 19 sep","Sporting Kansas City","Philadelphia Union",{time:"18:30"}),
+  M("Sáb 19 sep","St. Louis City SC","Toronto FC",{time:"18:30"}),
+  M("Sáb 19 sep","Colorado Rapids","Seattle Sounders FC",{time:"19:30"}),
+  M("Sáb 19 sep","Nashville SC","Chicago Fire FC",{time:"19:30"}),
+  M("Sáb 19 sep","Real Salt Lake","Vancouver Whitecaps FC",{time:"19:30"}),
+  M("Sáb 19 sep","Portland Timbers","Atlanta United FC",{time:"20:30"}),
+  M("Dom 20 sep","Inter Miami CF","San Diego FC",{time:"17:00"}),
+]},
+};
+const FIXTURES_AS_OF = "15 de septiembre de 2026, actualizado ~8:55pm hora Tabasco";
+const FIXTURES_YEAR = 2026;
+const MONTHS_ES = {ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11};
+
+function leagueAvgPerTeam(teams){
+  const totalGF = teams.reduce((s,t)=>s+t.gf,0);
+  const totalP = teams.reduce((s,t)=>s+t.p,0);
+  return totalGF/totalP;
+}
+const SHRINK_MATCHES = 5; // pseudo-partidos "promedio" que se mezclan con la muestra real, para que 2-6 partidos no den índices absurdos (ej. defensa en 0)
+function attDef(team, avg){
+  const gfpj = (team.gf + SHRINK_MATCHES*avg) / (team.p + SHRINK_MATCHES);
+  const gapj = (team.ga + SHRINK_MATCHES*avg) / (team.p + SHRINK_MATCHES);
+  return { att: gfpj/avg, def: gapj/avg };
+}
+function poissonPMF(k, lam){
+  let f=1; for(let i=2;i<=k;i++) f*=i;
+  return Math.exp(-lam)*Math.pow(lam,k)/f;
+}
+function distFor(lamTotal){
+  const p=[]; for(let k=0;k<5;k++) p.push(poissonPMF(k,lamTotal));
+  const p5plus = 1 - p.reduce((a,b)=>a+b,0);
+  return [...p, p5plus];
+}
+function overProbs(lamTotal){
+  const p0=poissonPMF(0,lamTotal), p1=poissonPMF(1,lamTotal), p2=poissonPMF(2,lamTotal);
+  return { over15: 1-p0-p1, over25: 1-p0-p1-p2 };
+}
+function scoreGrid(lamH, lamA, max){
+  const gh=[], ga=[];
+  for(let k=0;k<=max;k++){ gh.push(poissonPMF(k,lamH)); ga.push(poissonPMF(k,lamA)); }
+  return {gh, ga};
+}
+function matchOutcomes(lamH, lamA){
+  const MAX=10;
+  const {gh,ga} = scoreGrid(lamH,lamA,MAX);
+  let home=0, draw=0, away=0;
+  for(let h=0; h<=MAX; h++){
+    for(let a=0; a<=MAX; a++){
+      const p = gh[h]*ga[a];
+      if(h>a) home+=p; else if(h===a) draw+=p; else away+=p;
+    }
+  }
+  const p10 = gh[1]*ga[0];
+  const p01 = gh[0]*ga[1];
+  const p00 = gh[0]*ga[0];
+  return {home,draw,away,p10,p01,p00};
+}
+
+function pct(x){ return (x*100).toFixed(0)+'%'; }
+
+// ---------- Refinamientos estadísticos: Dixon-Coles, Poisson bivariado, Skellam ----------
+// Ambos parámetros (rho, lambda3) son valores típicos publicados en la literatura académica de
+// modelos de gol en fútbol (Dixon & Coles 1997; Karlis & Ntzoufras 2003), NO ajustados liga por liga
+// ni partido por partido, porque eso requeriría el historial completo de resultados de la temporada
+// (aquí solo tenemos el acumulado de goles por equipo). Se muestran como referencia de dirección del
+// ajuste, no como el número final — igual que el resto del dashboard, nunca se inventan datos de partidos.
+const DC_RHO = -0.13;
+const BIVAR_LAMBDA3 = 0.12;
+
+function factorial(n){ let f=1; for(let i=2;i<=n;i++) f*=i; return f; }
+function combo(n,k){ if(k<0||k>n) return 0; return factorial(n)/(factorial(k)*factorial(n-k)); }
+
+function gridFromIndependent(lamH, lamA, MAX){
+  const gh=[], ga=[];
+  for(let k=0;k<=MAX;k++){ gh.push(poissonPMF(k,lamH)); ga.push(poissonPMF(k,lamA)); }
+  const P=[];
+  for(let x=0;x<=MAX;x++){ P.push([]); for(let y=0;y<=MAX;y++) P[x].push(gh[x]*ga[y]); }
+  return P;
+}
+function dixonColesTau(x,y,lam,mu,rho){
+  if(x===0 && y===0) return 1 - lam*mu*rho;
+  if(x===0 && y===1) return 1 + lam*rho;
+  if(x===1 && y===0) return 1 + mu*rho;
+  if(x===1 && y===1) return 1 - rho;
+  return 1;
+}
+function dixonColesGrid(lamH, lamA, MAX){
+  const P = gridFromIndependent(lamH, lamA, MAX);
+  for(let x=0;x<=1;x++) for(let y=0;y<=1;y++) P[x][y] *= dixonColesTau(x,y,lamH,lamA,DC_RHO);
+  let sum=0;
+  for(let x=0;x<=MAX;x++) for(let y=0;y<=MAX;y++) sum += P[x][y];
+  for(let x=0;x<=MAX;x++) for(let y=0;y<=MAX;y++) P[x][y] /= sum;
+  return P;
+}
+function bivarPoissonGrid(lamH, lamA, lam3, MAX){
+  const lam1 = Math.max(lamH-lam3, 0.001), lam2 = Math.max(lamA-lam3, 0.001);
+  const P=[];
+  for(let x=0;x<=MAX;x++){
+    P.push([]);
+    for(let y=0;y<=MAX;y++){
+      let s=0; const kmax = Math.min(x,y);
+      for(let k=0;k<=kmax;k++) s += combo(x,k)*combo(y,k)*factorial(k)*Math.pow(lam3/(lam1*lam2), k);
+      P[x].push(Math.exp(-(lam1+lam2+lam3)) * (Math.pow(lam1,x)/factorial(x)) * (Math.pow(lam2,y)/factorial(y)) * s);
+    }
+  }
+  return P;
+}
+function statsFromGrid(P, MAX){
+  let pHome=0,pDraw=0,pAway=0;
+  const totals = new Array(2*MAX+1).fill(0);
+  for(let x=0;x<=MAX;x++){
+    for(let y=0;y<=MAX;y++){
+      const p = P[x][y];
+      if(x>y) pHome+=p; else if(x===y) pDraw+=p; else pAway+=p;
+      totals[x+y]+=p;
+    }
+  }
+  const over15 = 1-totals[0]-totals[1];
+  const over25 = over15-totals[2];
+  return { p10:P[1][0], p01:P[0][1], pDraw, over15, over25 };
+}
+function skellamPMF(k, lam, mu, MAX){
+  let s=0;
+  for(let y=0;y<=MAX;y++){ const x=y+k; if(x<0||x>MAX) continue; s += poissonPMF(x,lam)*poissonPMF(y,mu); }
+  return s;
+}
+function renderAdvancedModels(lamH, lamA){
+  const MAX = 10;
+  const rows = [
+    {label:'Poisson simple (base)', s: statsFromGrid(gridFromIndependent(lamH,lamA,MAX), MAX)},
+    {label:'Dixon-Coles', s: statsFromGrid(dixonColesGrid(lamH,lamA,MAX), MAX)},
+    {label:'Poisson bivariado', s: statsFromGrid(bivarPoissonGrid(lamH,lamA,BIVAR_LAMBDA3,MAX), MAX)},
+  ];
+  const tbl = document.getElementById('modelCompare');
+  if(tbl){
+    tbl.innerHTML = `<div class="calc-scroll"><table class="calc-table">
+      <thead><tr><th>Modelo</th><th>P(1-0)</th><th>P(0-1)</th><th>Over 1.5</th><th>Over 2.5</th><th>Empate</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr><td>${r.label}</td><td>${pct(r.s.p10)}</td><td>${pct(r.s.p01)}</td><td>${pct(r.s.over15)}</td><td>${pct(r.s.over25)}</td><td>${pct(r.s.pDraw)}</td></tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="calc-note">ρ (Dixon-Coles) = ${DC_RHO} · λ₃ (Poisson bivariado) = ${BIVAR_LAMBDA3} — valores típicos de la literatura, no ajustados por liga.</div>`;
+  }
+  const diffs = [-3,-2,-1,0,1,2,3];
+  const labels = ['Vis. 3+','Vis. 2','Vis. 1','Empate','Local 1','Local 2','Local 3+'];
+  const probs = diffs.map((k,i)=>{
+    if(i===0){ let s=0; for(let j=-MAX;j<=-3;j++) s+=skellamPMF(j,lamH,lamA,MAX); return s; }
+    if(i===diffs.length-1){ let s=0; for(let j=3;j<=MAX;j++) s+=skellamPMF(j,lamH,lamA,MAX); return s; }
+    return skellamPMF(k,lamH,lamA,MAX);
+  });
+  const skEl = document.getElementById('skellamHist');
+  if(skEl){
+    const maxP = Math.max(...probs);
+    skEl.innerHTML = probs.map((p,i)=>`<div class="bar">
+        <div class="bv">${pct(p)}</div>
+        <div class="bb" style="height:${Math.max(4,(p/maxP)*70)}px"></div>
+        <div class="bl">${labels[i]}</div>
+      </div>`).join('');
+  }
+}
+
+// ---------- Termómetro (siempre con la temporada completa más reciente / la única disponible) ----------
+function stableSeason(leagueKey){
+  const seasons = LEAGUES[leagueKey].seasons;
+  return seasons["2025-26"] || seasons["actual"];
+}
+function renderThermometer(){
+  const rows = Object.keys(LEAGUES).map((name)=>{
+    const teams = stableSeason(name).teams;
+    const avg = leagueAvgPerTeam(teams)*2;
+    const {over15, over25} = overProbs(avg);
+    return {name, avg, over15, over25};
+  });
+  rows.push({name:"Champions League (fase de liga)", avg: UCL_AVG_TOTAL, over15: overProbs(UCL_AVG_TOTAL).over15, over25: overProbs(UCL_AVG_TOTAL).over25, isUCL:true});
+  rows.sort((a,b)=>b.avg-a.avg);
+  const max = Math.max(...rows.map(r=>r.avg));
+  const min = Math.min(...rows.map(r=>r.avg));
+  const seqColors = ['var(--seq-2)','var(--seq-3)','var(--seq-4)','var(--seq-5)'];
+  const el = document.getElementById('leagueBars');
+  el.innerHTML = rows.map(r=>{
+    const widthPct = 18 + (r.avg-min)/(max-min || 1) * 78;
+    const bucket = Math.min(3, Math.floor((r.avg-min)/((max-min||1)/4)));
+    return `<div class="league-row">
+      <div class="lname">${r.name}${r.isUCL? '<small>referencia UEFA 25/26</small>':''}</div>
+      <div class="track"><div class="fill" style="width:${widthPct}%; background:${seqColors[bucket]}"></div></div>
+      <div class="lstats"><b>${r.avg.toFixed(2)}</b> g/p · O1.5 <b>${pct(r.over15)}</b> · O2.5 <b>${pct(r.over25)}</b></div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Partidos de la jornada ----------
+let activeFixtureLeague = 'Premier League';
+function renderFixtureTabs(){
+  const el = document.getElementById('fixtureTabs');
+  el.innerHTML = Object.keys(FIXTURES).map(k=>
+    `<button class="tab ${k===activeFixtureLeague?'active':''}" data-league="${k}">${k}</button>`
+  ).join('');
+  [...el.querySelectorAll('.tab')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{ activeFixtureLeague = btn.dataset.league; renderFixtureTabs(); renderFixtureList(); });
+  });
+}
+function fixtureKickoffMs(m){
+  if(!m.time) return null;
+  const parts = m.date.split(' '); // ej. ["Dom","13","sep"]
+  const day = parseInt(parts[1],10);
+  const month = MONTHS_ES[(parts[2]||'').toLowerCase()];
+  if(month===undefined || isNaN(day)) return null;
+  const bits = m.time.split(':');
+  const hh = Number(bits[0]), mm = Number(bits[1]);
+  // Truco: usamos Date.UTC para construir un instante cuyos campos UTC coinciden
+  // numéricamente con la hora de Tabasco (UTC-6, sin horario de verano en México).
+  return Date.UTC(FIXTURES_YEAR, month, day, hh, mm);
+}
+function nowTabascoMs(){ return Date.now() - 6*3600*1000; }
+function kickoffHint(m){
+  if(m.played || !m.time) return null;
+  const kickoff = fixtureKickoffMs(m);
+  if(kickoff===null) return null;
+  const diffMin = (nowTabascoMs() - kickoff)/60000;
+  if(diffMin < 0) return null; // aún no empieza
+  if(diffMin < 130) return {cls:'live', text:'probablemente en juego'};
+  return {cls:'over', text:'ya debería haber terminado'};
+}
+function renderFixtureList(){
+  const data = FIXTURES[activeFixtureLeague];
+  const el = document.getElementById('fixtureList');
+  document.getElementById('fixturesAsOf').textContent =
+    `${data.round} — al ${FIXTURES_AS_OF}. Horarios en hora de Tabasco (UTC-6). Da clic en "Analizar" para cargarlo en la calculadora de abajo.`;
+  el.innerHTML = data.matches.map((m,i)=>{
+    const played = !!m.played;
+    const hint = kickoffHint(m);
+    const sig = played ? null : computeFixtureSignal(activeFixtureLeague, m);
+    const qualifies = sig && sig.over15 >= 0.75;
+    const sigCls = !sig ? '' : (sig.over15>=0.88?'good':(sig.over15>=0.75?'warn':'bad'));
+    return `<div class="item-card ${played?'played':''}">
+      <div class="item-card-head">
+        <div class="item-card-name">${m.home} vs ${m.away}</div>
+      </div>
+      <div class="item-card-stats">
+        <div class="item-stat ${sigCls}">
+          <div class="lbl">${played?'Resultado':'Probabilidad'}</div>
+          <div class="val" style="${played?'font-size:18px;':''}">${played?m.score:(sig?pct(sig.over15):'—')}</div>
+        </div>
+        <div class="item-stat">
+          <div class="lbl">${played?'Finalizado':'Fecha'}</div>
+          <div class="val" style="font-size:14px;">${m.date}${(!played && m.time) ? ` ${m.time}`:''}</div>
+        </div>
+      </div>
+      ${hint?`<div class="fhint ${hint.cls}">${hint.cls==='over'?'⏱':'🔴'} ${hint.text}</div>`:''}
+      <div class="item-card-actions single">
+        ${played ? `<button class="fbtn" disabled>Jugado</button>` : `<button class="fbtn" data-idx="${i}">Analizar</button>`}
+      </div>
+    </div>`;
+  }).join('');
+  [...el.querySelectorAll('.fbtn[data-idx]')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const m = data.matches[Number(btn.dataset.idx)];
+      loadFixtureIntoCalculator(activeFixtureLeague, data.season, m.home, m.away);
+    });
+  });
+}
+function loadFixtureIntoCalculator(league, seasonKey, home, away){
+  compSel.value = league;
+  populateSeasons();
+  seasonSel.value = seasonKey;
+  populateTeams();
+  homeSel.value = home;
+  awaySel.value = away;
+  computeAndRender();
+  const target = document.getElementById('calculator');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ---------- Ranking automático "mejores partidos del día" ----------
+// Reutiliza exactamente la misma fórmula de λ que usa la calculadora (avg × ataque ×
+// defensa rival × factor de local/visita) pero para CUALQUIER partido sin jugar del
+// calendario, sin pasar por la selección manual de equipo por equipo. Solo cubre las
+// 9 ligas/copas domésticas (no Champions, porque esa requiere reescalar entre ligas).
+function fixtureLambdas(comp, m){
+  const league = LEAGUES[comp];
+  const fx = FIXTURES[comp];
+  if(!league || !fx) return null;
+  const season = league.seasons[fx.season];
+  if(!season) return null;
+  const hTeam = season.teams.find(t=>t.n===m.home);
+  const aTeam = season.teams.find(t=>t.n===m.away);
+  if(!hTeam || !aTeam) return null;
+  const avg = leagueAvgPerTeam(season.teams);
+  const hAD = attDef(hTeam, avg), aAD = attDef(aTeam, avg);
+  const lamH = avg*hAD.att*aAD.def*HOME_ADV;
+  const lamA = avg*aAD.att*hAD.def*AWAY_ADV;
+  return {lamH, lamA, lamTotal: lamH+lamA, seasonKey: fx.season, seasonLabel: season.label.split(' (')[0]};
+}
+function computeFixtureSignal(comp, m){
+  const r = fixtureLambdas(comp, m);
+  if(!r) return null;
+  const {over15, over25} = overProbs(r.lamTotal);
+  return {lamH:r.lamH, lamA:r.lamA, lamTotal:r.lamTotal, over15, over25, seasonKey:r.seasonKey};
+}
+// Arma el mismo objeto que guarda "Mi selección del día", directo desde un partido del
+// calendario — para el botón "+ Agregar" del ranking, sin pasar por la calculadora.
+function buildPickFromFixture(comp, m){
+  const r = fixtureLambdas(comp, m);
+  if(!r) return null;
+  const {over15, over25} = overProbs(r.lamTotal);
+  const outcomes = matchOutcomes(r.lamH, r.lamA);
+  return {
+    league: comp, seasonLabel: r.seasonLabel,
+    home: m.home, away: m.away,
+    lamHome: Number(r.lamH.toFixed(2)), lamAway: Number(r.lamA.toFixed(2)), lamTotal: Number(r.lamTotal.toFixed(2)),
+    over15, over25, signal: over15,
+    p10: outcomes.p10, p01: outcomes.p01, p00: outcomes.p00,
+    homeWinP: outcomes.home, drawP: outcomes.draw, awayWinP: outcomes.away,
+    date: m.date, time: m.time || null,
+    createdAt: Date.now(),
+  };
+}
+// Busca fecha/hora real de un partido ya calendarizado, para picks que sí corresponden
+// a un partido de FIXTURES (Champions no tiene calendario propio aquí, así que da null).
+function findFixtureMeta(comp, home, away){
+  const fx = FIXTURES[comp];
+  if(!fx) return null;
+  const m = fx.matches.find(x=>x.home===home && x.away===away);
+  return m ? {date:m.date, time:m.time||null} : null;
+}
+function rankFixturesOfTheDay(){
+  const rows = [];
+  Object.keys(FIXTURES).forEach(comp=>{
+    FIXTURES[comp].matches.forEach(m=>{
+      if(m.played) return;
+      const sig = computeFixtureSignal(comp, m);
+      if(!sig) return;
+      rows.push(Object.assign({comp, m}, sig));
+    });
+  });
+  rows.sort((a,b)=>b.over15-a.over15);
+  return rows;
+}
+let rankingLimit = 10;
+function renderRankingLimitTabs(){
+  const el = document.getElementById('rankingLimitTabs');
+  if(!el) return;
+  el.innerHTML = [10,20,30].map(n=>
+    `<button class="tab ${n===rankingLimit?'active':''}" data-limit="${n}">Top ${n}</button>`
+  ).join('');
+  [...el.querySelectorAll('.tab')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      rankingLimit = Number(btn.dataset.limit);
+      renderRankingLimitTabs();
+      renderRanking();
+    });
+  });
+}
+async function quickAddPick(comp, home, away, btn){
+  if(!picksDb) return;
+  const fx = FIXTURES[comp];
+  const m = fx && fx.matches.find(x=>x.home===home && x.away===away);
+  const pick = m ? buildPickFromFixture(comp, m) : null;
+  if(!pick) return;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try{
+    await picksDb.collection('picks').add(pick);
+    // No revertimos el texto aquí: el onSnapshot de 'picks' dispara
+    // renderPicksList, que actualiza currentPickKeys y vuelve a pintar el
+    // ranking con el botón ya en "✓ Agregado" de forma permanente.
+  } catch(e){
+    console.error('quickAddPick failed', e);
+    btn.textContent = '+ Agregar';
+    btn.disabled = false;
+  }
+}
+function renderRanking(){
+  const el = document.getElementById('rankingList');
+  if(!el) return;
+  const rows = rankFixturesOfTheDay();
+  if(!rows.length){
+    el.innerHTML = `<p class="empty-note">No hay partidos sin jugar en el calendario actual.</p>`;
+    return;
+  }
+  const top = rows.slice(0, rankingLimit);
+  el.innerHTML = top.map((r,i)=>{
+    const cls = r.over15>=0.88 ? 'good' : (r.over15>=0.75 ? 'warn' : 'bad');
+    const already = currentPickKeys.has(pickKey(r.comp, r.m.home, r.m.away));
+    const addBtnHtml = already
+      ? `<button class="quickadd-btn added" disabled>✓ Agregado</button>`
+      : `<button class="quickadd-btn" data-comp="${r.comp}" data-home="${r.m.home}" data-away="${r.m.away}" ${picksAvailable?'':'disabled'}>+ Agregar</button>`;
+    return `<div class="item-card">
+      <div class="item-card-head">
+        <div class="item-card-name"><span class="idx">#${i+1}</span>${r.m.home} vs ${r.m.away}</div>
+      </div>
+      <div class="item-card-stats">
+        <div class="item-stat ${cls}">
+          <div class="lbl">Probabilidad</div>
+          <div class="val">${pct(r.over15)}</div>
+        </div>
+        <div class="item-stat">
+          <div class="lbl">${r.comp}</div>
+          <div class="val" style="font-size:13px;">${r.m.date}${r.m.time?` ${r.m.time}`:''}</div>
+        </div>
+      </div>
+      <div class="item-card-actions">
+        <button class="fbtn" data-comp="${r.comp}" data-home="${r.m.home}" data-away="${r.m.away}" data-season="${r.seasonKey}">Analizar</button>
+        ${addBtnHtml}
+      </div>
+    </div>`;
+  }).join('');
+  [...el.querySelectorAll('.fbtn[data-comp]')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      loadFixtureIntoCalculator(btn.dataset.comp, btn.dataset.season, btn.dataset.home, btn.dataset.away);
+    });
+  });
+  [...el.querySelectorAll('.quickadd-btn[data-comp]')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      quickAddPick(btn.dataset.comp, btn.dataset.home, btn.dataset.away, btn);
+    });
+  });
+}
+
+// ---------- Calculadora ----------
+let lastPick = null;
+let picksAvailable = false;
+// Partidos que YA están en "Mi selección del día" ahora mismo (se recalcula
+// cada vez que cambia la selección), para que el botón "+ Agregar" del
+// ranking se quede en "✓ Agregado" de forma permanente en vez de revertir.
+let currentPickKeys = new Set();
+function pickKey(league, home, away){ return `${league}|${home}|${away}`; }
+const compSel = document.getElementById('competition');
+const seasonSel = document.getElementById('season');
+const homeSel = document.getElementById('homeTeam');
+const awaySel = document.getElementById('awayTeam');
+
+function populateCompetitions(){
+  const keys = Object.keys(LEAGUES);
+  compSel.innerHTML = keys.map(k=>`<option value="${k}">${k}</option>`).join('') +
+    `<option value="__UCL__">UEFA Champions League (cruces entre ligas)</option>`;
+}
+function populateSeasons(){
+  const comp = compSel.value;
+  if(comp === '__UCL__'){
+    seasonSel.innerHTML = `<option value="2025-26">Temporada 2025/26 (completa, referencia entre ligas)</option>`;
+    seasonSel.style.display = 'none';
+    return;
+  }
+  const seasons = LEAGUES[comp].seasons;
+  const keysOrdered = Object.keys(seasons); // insertion order: current first for euro leagues, "actual" for MX/MLS
+  seasonSel.innerHTML = keysOrdered.map(k=>`<option value="${k}">${seasons[k].label}</option>`).join('');
+  seasonSel.style.display = keysOrdered.length > 1 ? '' : 'none';
+  seasonSel.value = keysOrdered[0];
+}
+function currentSeasonKey(){
+  const comp = compSel.value;
+  if(comp === '__UCL__') return '2025-26';
+  return seasonSel.value || Object.keys(LEAGUES[comp].seasons)[0];
+}
+function populateTeams(){
+  const comp = compSel.value;
+  if(comp === '__UCL__'){
+    const groups = EURO_LEAGUES.map(lg=>{
+      const teams = LEAGUES[lg].seasons["2025-26"].teams;
+      const opts = [...teams].sort((a,b)=>a.n.localeCompare(b.n))
+        .map(t=>`<option value="${lg}|||${t.n}">${t.n}</option>`).join('');
+      return `<optgroup label="${lg}">${opts}</optgroup>`;
+    }).join('');
+    homeSel.innerHTML = groups; awaySel.innerHTML = groups;
+    homeSel.value = "La Liga|||Real Madrid";
+    awaySel.value = "Serie A|||Inter de Milán";
+  } else {
+    const seasonKey = currentSeasonKey();
+    const teams = [...LEAGUES[comp].seasons[seasonKey].teams].sort((a,b)=>a.n.localeCompare(b.n));
+    const opts = teams.map(t=>`<option value="${t.n}">${t.n}</option>`).join('');
+    homeSel.innerHTML = opts; awaySel.innerHTML = opts;
+    if(comp === 'La Liga' && teams.some(t=>t.n==='Real Madrid') && teams.some(t=>t.n==='Barcelona')){
+      homeSel.value='Real Madrid'; awaySel.value='Barcelona';
+    } else { homeSel.value = teams[0].n; awaySel.value = teams[1] ? teams[1].n : teams[0].n; }
+  }
+  computeAndRender();
+}
+
+function findTeamInSeason(leagueKey, seasonKey, name){
+  const season = LEAGUES[leagueKey].seasons[seasonKey];
+  if(!season) return null;
+  return season.teams.find(t=>t.n===name) || null;
+}
+
+function renderCompare(leagueKey, homeName, awayName){
+  const compareEl = document.getElementById('compare');
+  const seasons = LEAGUES[leagueKey] ? LEAGUES[leagueKey].seasons : null;
+  if(!seasons || Object.keys(seasons).length < 2){ compareEl.innerHTML = ''; return; }
+  const seasonKeys = Object.keys(seasons);
+  function cardFor(name){
+    const rows = seasonKeys.map(sk=>{
+      const t = findTeamInSeason(leagueKey, sk, name);
+      if(!t) return `<div class="crow"><span>${seasons[sk].label.split(' (')[0]}</span><span class="cempty">sin datos</span></div>`;
+      const gfpj=(t.gf/t.p).toFixed(2), gcpj=(t.ga/t.p).toFixed(2);
+      return `<div class="crow"><span>${seasons[sk].label.split(' (')[0]} (${t.p} PJ)</span><span><b>${gfpj}</b> GF/PJ · <b>${gcpj}</b> GC/PJ</span></div>`;
+    }).join('');
+    return `<div class="compare-card"><div class="cname">${name}</div>${rows}</div>`;
+  }
+  compareEl.innerHTML = cardFor(homeName) + cardFor(awayName);
+}
+
+// Rendimiento individual de un equipo (su propio ataque/defensa) frente a un rival promedio,
+// en cancha neutral — NO es un historial de enfrentamientos directos entre dos equipos.
+function ownProfile(team, avg){
+  const ad = attDef(team, avg);
+  const gfpj = team.gf/team.p, gcpj = team.ga/team.p;
+  const lamOwn = avg*ad.att + avg*ad.def; // su ataque contra defensa promedio + su defensa contra ataque promedio
+  const over15 = overProbs(lamOwn).over15;
+  return { gfpj, gcpj, att: ad.att, def: ad.def, over15 };
+}
+function renderTeamProfile(homeLbl, awayLbl, hp, ap){
+  const el = document.getElementById('teamProfile');
+  if(!el) return;
+  function card(label, tag, p){
+    return `<div class="compare-card">
+      <div class="cname">${label} <span class="tag" style="margin-left:6px;">${tag}</span></div>
+      <div class="stat-grid">
+        <div class="stat"><b>${p.gfpj.toFixed(2)}</b><small>GF/PJ</small></div>
+        <div class="stat"><b>${p.gcpj.toFixed(2)}</b><small>GC/PJ</small></div>
+        <div class="stat"><b>${p.att.toFixed(2)}</b><small>Ataque</small></div>
+        <div class="stat"><b>${p.def.toFixed(2)}</b><small>Defensa</small></div>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = card(homeLbl, 'Local', hp) + card(awayLbl, 'Visitante', ap);
+}
+
+// Muestra la cuenta exacta detrás de λ_local y λ_visitante: promedio de la liga ×
+// ataque propio × defensa del rival × factor de localía/visita — la misma fórmula
+// que ya usa el modelo de Poisson, aquí expuesta como tabla de datos.
+function renderMatchMath(homeLbl, awayLbl, avgHomeCtx, avgAwayCtx, hp, ap, lamH, lamA, lamTotal, isUCL){
+  const el = document.getElementById('matchMath');
+  if(!el) return;
+  const ucNote = isUCL ? ` <span class="tag">ajustado a UCL ${UCL_AVG_TOTAL}</span>` : '';
+  el.innerHTML = `
+    <div class="calc-title">📐 Gol esperado (λ)</div>
+    <div class="calc-scroll">
+      <table class="calc-table">
+        <thead><tr><th></th><th>Prom.</th><th>Ataque</th><th>Def. rival</th><th>Factor</th><th>λ</th></tr></thead>
+        <tbody>
+          <tr><td>${homeLbl}</td><td>${avgHomeCtx.toFixed(2)}</td><td>${hp.att.toFixed(2)}</td><td>${ap.def.toFixed(2)}</td><td>${HOME_ADV}</td><td><b>${lamH.toFixed(2)}</b></td></tr>
+          <tr><td>${awayLbl}</td><td>${avgAwayCtx.toFixed(2)}</td><td>${ap.att.toFixed(2)}</td><td>${hp.def.toFixed(2)}</td><td>${AWAY_ADV}</td><td><b>${lamA.toFixed(2)}</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="calc-total">Total: <b>${lamTotal.toFixed(2)}</b> goles${ucNote}</div>
+  `;
+}
+
+function computeAndRender(){
+  const comp = compSel.value;
+  let lamH, lamA, vintageText, cautionParts=[];
+  let hTeam, aTeam, avgHomeCtx, avgAwayCtx;
+  if(comp === '__UCL__'){
+    const [hLg, hName] = homeSel.value.split('|||');
+    const [aLg, aName] = awaySel.value.split('|||');
+    const hTeams = LEAGUES[hLg].seasons["2025-26"].teams, aTeams = LEAGUES[aLg].seasons["2025-26"].teams;
+    const avgH = leagueAvgPerTeam(hTeams), avgA = leagueAvgPerTeam(aTeams);
+    hTeam = hTeams.find(t=>t.n===hName); aTeam = aTeams.find(t=>t.n===aName);
+    avgHomeCtx = avgH; avgAwayCtx = avgA;
+    const hAD = attDef(hTeam, avgH), aAD = attDef(aTeam, avgA);
+    const baseAvg = (avgH+avgA)/2;
+    let lamHraw = baseAvg*hAD.att*aAD.def*HOME_ADV;
+    let lamAraw = baseAvg*aAD.att*hAD.def*AWAY_ADV;
+    const domesticBaseline = baseAvg*2;
+    const factor = UCL_AVG_TOTAL/domesticBaseline;
+    lamH = lamHraw*factor; lamA = lamAraw*factor;
+    vintageText = `${hName} (${hLg}, 2025/26) vs ${aName} (${aLg}, 2025/26) · total reescalado al promedio real de la Champions (${UCL_AVG_TOTAL} g/partido).`;
+    document.getElementById('compare').innerHTML = '';
+  } else {
+    const seasonKey = currentSeasonKey();
+    const data = LEAGUES[comp].seasons[seasonKey];
+    const avg = leagueAvgPerTeam(data.teams);
+    hTeam = data.teams.find(t=>t.n===homeSel.value);
+    aTeam = data.teams.find(t=>t.n===awaySel.value);
+    avgHomeCtx = avg; avgAwayCtx = avg;
+    if(!hTeam || !aTeam) return;
+    const hAD = attDef(hTeam, avg), aAD = attDef(aTeam, avg);
+    lamH = avg*hAD.att*aAD.def*HOME_ADV;
+    lamA = avg*aAD.att*hAD.def*AWAY_ADV;
+    vintageText = `${comp} — ${data.label}.`;
+    if(hTeam.p < SMALL_SAMPLE) cautionParts.push(`${hTeam.n} lleva solo ${hTeam.p} partidos`);
+    if(aTeam.p < SMALL_SAMPLE && aTeam.n!==hTeam.n) cautionParts.push(`${aTeam.n} lleva solo ${aTeam.p} partidos`);
+    renderCompare(comp, hTeam.n, aTeam.n);
+  }
+  const lamTotal = lamH+lamA;
+  const {over15, over25} = overProbs(lamTotal);
+
+  document.getElementById('lamHome').textContent = lamH.toFixed(2);
+  document.getElementById('lamAway').textContent = lamA.toFixed(2);
+  document.getElementById('lamTotal').textContent = lamTotal.toFixed(2);
+
+  setTile('tile15','p15','s15', over15, 0.80, 0.60);
+  setTile('tile25','p25','s25', over25, 0.55, 0.35);
+
+  const dist = distFor(lamTotal);
+  const hist = document.getElementById('hist');
+  const maxP = Math.max(...dist);
+  const labels = ['0','1','2','3','4','5+'];
+  hist.innerHTML = dist.map((p,i)=>`<div class="bar">
+      <div class="bv">${pct(p)}</div>
+      <div class="bb" style="height:${Math.max(4,(p/maxP)*70)}px"></div>
+      <div class="bl">${labels[i]}</div>
+    </div>`).join('');
+
+  // 1X2
+  const outcomes = matchOutcomes(lamH, lamA);
+  const resEl = document.getElementById('resultRows');
+  const homeLbl = comp==='__UCL__' ? homeSel.value.split('|||')[1] : homeSel.value;
+  const awayLbl = comp==='__UCL__' ? awaySel.value.split('|||')[1] : awaySel.value;
+  const hp = ownProfile(hTeam, avgHomeCtx), ap = ownProfile(aTeam, avgAwayCtx);
+  renderTeamProfile(homeLbl, awayLbl, hp, ap);
+  renderMatchMath(homeLbl, awayLbl, avgHomeCtx, avgAwayCtx, hp, ap, lamH, lamA, lamTotal, comp==='__UCL__');
+  const outRows = [
+    {label:`Gana ${homeLbl}`, val:outcomes.home},
+    {label:'Empate', val:outcomes.draw},
+    {label:`Gana ${awayLbl}`, val:outcomes.away},
+  ];
+  resEl.innerHTML = outRows.map(r=>`<div class="outcome-row">
+      <div class="oname">${r.label}</div>
+      <div class="otrack"><div class="ofill" style="width:${(r.val*100).toFixed(1)}%"></div></div>
+      <div class="oval">${pct(r.val)}</div>
+    </div>`).join('');
+
+  // Estrategia: 2+ goles Y que NO sea exactamente 1-0 ni 0-1 (equivale a Over 1.5, ya excluye 0-0)
+  const signal = over15;
+  setTile('tileSignal','pSignal','sSignal', signal, 0.88, 0.75);
+  document.getElementById('p10').textContent = pct(outcomes.p10);
+  document.getElementById('p01').textContent = pct(outcomes.p01);
+  document.getElementById('p00').textContent = pct(outcomes.p00);
+
+  // Quién anota primero (estimación)
+  const shareHome = lamTotal>0 ? lamH/lamTotal : 0.5;
+  const shareAway = 1-shareHome;
+  const firstEl = document.getElementById('firstRows');
+  const pNoGoals = poissonPMF(0,lamTotal);
+  firstEl.innerHTML = `
+    <div class="outcome-row"><div class="oname">${homeLbl}</div><div class="otrack"><div class="ofill" style="width:${(shareHome*100).toFixed(1)}%"></div></div><div class="oval">${pct(shareHome)}</div></div>
+    <div class="outcome-row"><div class="oname">${awayLbl}</div><div class="otrack"><div class="ofill" style="width:${(shareAway*100).toFixed(1)}%"></div></div><div class="oval">${pct(shareAway)}</div></div>
+    <div class="section-note" style="margin-top:2px;">Probabilidad de que nadie anote en todo el partido (0-0): <b>${pct(pNoGoals)}</b>.</div>
+  `;
+
+  renderAdvancedModels(lamH, lamA);
+
+  const cautionEl = document.getElementById('caution');
+  if(cautionParts.length){
+    cautionEl.style.display = '';
+    cautionEl.textContent = `⚠ Muestra pequeña: ${cautionParts.join(' y ')} en esta temporada — el promedio puede cambiar bastante con los próximos resultados.`;
+  } else {
+    cautionEl.style.display = 'none';
+  }
+
+  document.getElementById('vintageNote').textContent = vintageText;
+
+  const fxMeta = comp !== '__UCL__' ? findFixtureMeta(comp, homeLbl, awayLbl) : null;
+  lastPick = {
+    league: comp === '__UCL__' ? 'Champions League' : comp,
+    seasonLabel: comp === '__UCL__' ? '2025/26 (reescalado a Champions)' : LEAGUES[comp].seasons[currentSeasonKey()].label.split(' (')[0],
+    home: homeLbl,
+    away: awayLbl,
+    lamHome: Number(lamH.toFixed(2)),
+    lamAway: Number(lamA.toFixed(2)),
+    lamTotal: Number(lamTotal.toFixed(2)),
+    over15: over15,
+    over25: over25,
+    signal: signal,
+    p10: outcomes.p10,
+    p01: outcomes.p01,
+    p00: outcomes.p00,
+    homeWinP: outcomes.home,
+    drawP: outcomes.draw,
+    awayWinP: outcomes.away,
+    date: fxMeta ? fxMeta.date : null,
+    time: fxMeta ? fxMeta.time : null,
+    createdAt: Date.now(),
+  };
+  const addBtn = document.getElementById('addPickBtn');
+  if(addBtn) addBtn.disabled = !picksAvailable;
+}
+
+function setTile(tileId, valId, statusId, prob, goodT, warnT){
+  const tile = document.getElementById(tileId);
+  tile.classList.remove('good','warn','bad');
+  let cls, label;
+  if(prob>=goodT){ cls='good'; label='Alta probabilidad'; }
+  else if(prob>=warnT){ cls='warn'; label='Probabilidad media'; }
+  else { cls='bad'; label='Baja probabilidad'; }
+  tile.classList.add(cls);
+  document.getElementById(valId).textContent = pct(prob);
+  document.getElementById(statusId).textContent = label;
+}
+
+compSel.addEventListener('change', ()=>{ populateSeasons(); populateTeams(); });
+seasonSel.addEventListener('change', populateTeams);
+homeSel.addEventListener('change', computeAndRender);
+awaySel.addEventListener('change', computeAndRender);
+
+// ---------- Mi selección del día ----------
+let picksDb = null;
+let unsubPicks = null;
+let unsubHistory = null;
+let picksUsingLocalFallback = false;
+
+// Cuando la página corre fuera del entorno de Claude (por ejemplo publicada
+// en GitHub Pages como PWA), window.claude no existe. Este shim guarda datos
+// en localStorage del navegador, con la misma forma de llamadas (doc/collection,
+// get/set/update/delete/add/onSnapshot) que usa el resto del código para
+// cualquier colección — 'picks' (selección del día) e 'history' (historial de
+// aciertos) — para que todo lo demás funcione igual sin duplicar lógica.
+// Diferencia importante: esto es SOLO de este navegador/dispositivo, no se
+// sincroniza entre dispositivos como sí lo hace el capability db real.
+// Nota de compatibilidad: la colección 'picks' sigue usando la misma llave de
+// localStorage que antes (soccerIA_picks_v1) para no perder selecciones ya
+// guardadas por quien use la versión standalone/PWA.
+function createLocalDb(){
+  function keyFor(path){ return path==='picks' ? 'soccerIA_picks_v1' : ('soccerIA_db_v1_'+path); }
+  const listenersByPath = {};
+  function readAll(path){
+    try{ return JSON.parse(localStorage.getItem(keyFor(path)) || '[]'); }
+    catch(e){ return []; }
+  }
+  function writeAll(path, arr){
+    try{ localStorage.setItem(keyFor(path), JSON.stringify(arr)); } catch(e){ /* storage llena o bloqueada */ }
+  }
+  function toDocs(arr){
+    return arr.map(item=>({ id:item.id, exists:true, data:()=>item.data }));
+  }
+  function notify(path){
+    const fns = listenersByPath[path] || [];
+    const docs = toDocs(readAll(path));
+    fns.forEach(fn=>{ try{ fn({docs, size:docs.length, empty:docs.length===0}); }catch(e){} });
+  }
+  function docRef(path, id){
+    return {
+      id,
+      get(){
+        const item = readAll(path).find(x=>x.id===id);
+        return Promise.resolve(item ? {id, exists:true, data:()=>item.data} : {id, exists:false, data:()=>undefined});
+      },
+      set(data){
+        const arr = readAll(path);
+        const idx = arr.findIndex(x=>x.id===id);
+        if(idx>=0) arr[idx] = {id, data}; else arr.push({id, data});
+        writeAll(path, arr); notify(path);
+        return Promise.resolve();
+      },
+      update(data){
+        const arr = readAll(path);
+        const idx = arr.findIndex(x=>x.id===id);
+        if(idx>=0) arr[idx] = {id, data: Object.assign({}, arr[idx].data, data)};
+        else arr.push({id, data});
+        writeAll(path, arr); notify(path);
+        return Promise.resolve();
+      },
+      delete(){
+        writeAll(path, readAll(path).filter(x=>x.id!==id));
+        notify(path);
+        return Promise.resolve();
+      },
+    };
+  }
+  function collectionRef(path){
+    return {
+      orderBy(){ return this; }, // ya se guardan y leen en orden de inserción (cronológico)
+      onSnapshot(next){
+        (listenersByPath[path] = listenersByPath[path]||[]).push(next);
+        notify(path);
+        return ()=>{ listenersByPath[path] = (listenersByPath[path]||[]).filter(f=>f!==next); };
+      },
+      get(){ return Promise.resolve({docs: toDocs(readAll(path))}); },
+      add(data){
+        const id = 'local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+        const arr = readAll(path); arr.push({id, data}); writeAll(path, arr); notify(path);
+        return Promise.resolve({id});
+      },
+      doc(id){ return docRef(path, id || ('local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8))); },
+    };
+  }
+  return {
+    collection(path){ return collectionRef(path); },
+    doc(path){
+      const parts = String(path).split('/');
+      const id = parts.pop();
+      return docRef(parts.join('/'), id);
+    },
+  };
+}
+
+async function initPicks(){
+  const addBtn = document.getElementById('addPickBtn');
+  const clearBtn = document.getElementById('clearPicksBtn');
+
+  if(typeof window.claude !== 'undefined' && typeof window.claude.use === 'function'){
+    try{ picksDb = await window.claude.use('db'); } catch(e){ picksDb = null; }
+  }
+  if(!picksDb){
+    try{ picksDb = createLocalDb(); picksUsingLocalFallback = true; }
+    catch(e){ picksDb = null; }
+  }
+  if(!picksDb){
+    renderPicksUnavailable();
+    return;
+  }
+  picksAvailable = true;
+  if(lastPick) addBtn.disabled = false;
+  renderRanking(); // vuelve a pintar para habilitar los botones "+ Agregar" del ranking
+  addBtn.addEventListener('click', addPick);
+  clearBtn.addEventListener('click', clearPicks);
+  unsubPicks = picksDb.collection('picks').orderBy('createdAt','asc').onSnapshot(
+    (snap)=>{ renderPicksList(snap.docs); },
+    (err)=>{ console.error('picks onSnapshot error', err); renderPicksUnavailable(); }
+  );
+  unsubHistory = picksDb.collection('history').orderBy('resolvedAt','asc').onSnapshot(
+    (snap)=>{ renderTrackRecord(snap.docs); },
+    (err)=>{ console.error('history onSnapshot error', err); }
+  );
+}
+
+function renderPicksUnavailable(){
+  document.getElementById('selectionSummary').innerHTML =
+    `<p class="empty-note">La lista de selección del día no está disponible en esta vista — puedes seguir usando la calculadora de arriba partido por partido normalmente.</p>`;
+  document.getElementById('pickList').innerHTML = '';
+  const trEl = document.getElementById('trackRecord');
+  if(trEl) trEl.innerHTML = `<p class="empty-note">El historial de aciertos tampoco está disponible en esta vista.</p>`;
+  const addBtn = document.getElementById('addPickBtn');
+  if(addBtn){ addBtn.disabled = true; addBtn.title = 'No disponible en esta vista'; }
+}
+
+async function addPick(){
+  if(!picksDb || !lastPick) return;
+  const addBtn = document.getElementById('addPickBtn');
+  addBtn.disabled = true;
+  try{
+    await picksDb.collection('picks').add(lastPick);
+  } catch(e){
+    console.error('addPick failed', e);
+  } finally {
+    addBtn.disabled = false;
+  }
+}
+
+async function removePick(id){
+  if(!picksDb) return;
+  try{ await picksDb.doc('picks/'+id).delete(); }
+  catch(e){ console.error('removePick failed', e); }
+}
+
+async function clearPicks(){
+  if(!picksDb) return;
+  try{
+    const snap = await picksDb.collection('picks').get();
+    await Promise.all(snap.docs.map(d=>picksDb.doc('picks/'+d.id).delete()));
+  } catch(e){ console.error('clearPicks failed', e); }
+}
+
+// ---------- Historial de aciertos ----------
+// Cuando un partido guardado en "Mi selección del día" ya aparece como jugado en
+// FIXTURES (mismo torneo/local/visitante), comparamos el resultado real contra tu
+// estrategia (2+ goles, sin que sea 1-0 ni 0-1) y guardamos el veredicto en una
+// colección aparte ('history') que NO se borra al vaciar la selección del día —
+// así se puede ver con el tiempo si el modelo está bien calibrado o no.
+// Limitación honesta: solo resuelve partidos de las 9 ligas/copas domésticas (las
+// mismas que cubre FIXTURES); los picks de Champions League no se resuelven solos
+// porque no llevamos un calendario de jornada para esos cruces entre ligas.
+function findPlayedFixture(league, home, away){
+  const comp = FIXTURES[league];
+  if(!comp) return null;
+  return comp.matches.find(m=>m.played && m.home===home && m.away===away) || null;
+}
+function scoreHit(score){
+  const parts = String(score).split('-').map(Number);
+  if(parts.length!==2 || parts.some(n=>isNaN(n))) return null;
+  const [h,a] = parts;
+  const total = h+a;
+  const hit = total>=2 && !((h===1&&a===0)||(h===0&&a===1));
+  return {home:h, away:a, total, hit};
+}
+async function tryResolvePicks(picks){
+  if(!picksDb) return;
+  for(const p of picks){
+    if(p.resolved) continue;
+    const fx = findPlayedFixture(p.league, p.home, p.away);
+    if(!fx || !fx.score) continue;
+    const res = scoreHit(fx.score);
+    if(!res) continue;
+    try{
+      await picksDb.doc('picks/'+p.id).update({resolved:true, hit:res.hit, actualScore:fx.score, actualTotal:res.total});
+      await picksDb.doc('history/'+p.id).set({
+        league:p.league, home:p.home, away:p.away, seasonLabel:p.seasonLabel,
+        signal:p.signal, over15:p.over15, over25:p.over25,
+        hit:res.hit, actualScore:fx.score, actualTotal:res.total,
+        resolvedAt: Date.now(), createdAt: p.createdAt || Date.now(),
+      });
+    } catch(e){ console.error('tryResolvePicks failed for', p.id, e); }
+  }
+}
+function renderTrackRecord(docs){
+  const el = document.getElementById('trackRecord');
+  if(!el) return;
+  if(!docs.length){
+    el.innerHTML = `<p class="empty-note">Aún no se ha resuelto ningún partido de tu selección. En cuanto termine uno que hayas guardado (de una liga/copa doméstica), aparece aquí automáticamente.</p>`;
+    return;
+  }
+  const items = docs.map(d=>d.data()).sort((a,b)=>(b.resolvedAt||0)-(a.resolvedAt||0));
+  const hits = items.filter(x=>x.hit).length;
+  const total = items.length;
+  const rate = total ? hits/total : 0;
+  el.innerHTML = `
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat"><b>${total}</b><small>Resueltos</small></div>
+      <div class="stat"><b>${hits}</b><small>Aciertos</small></div>
+      <div class="stat"><b>${pct(rate)}</b><small>% de acierto</small></div>
+    </div>
+    <div class="pick-list" style="margin-top:10px;">
+      ${items.slice(0,8).map(x=>`<div class="item-card">
+        <div class="item-card-head">
+          <div class="item-card-name">${x.home} vs ${x.away}</div>
+        </div>
+        <div class="item-card-stats">
+          <div class="item-stat ${x.hit?'good':'bad'}">
+            <div class="lbl">Resultado</div>
+            <div class="val" style="font-size:14px;">${x.hit?'✅ Acertó':'❌ Falló'}</div>
+          </div>
+          <div class="item-stat">
+            <div class="lbl">${x.league}</div>
+            <div class="val" style="font-size:14px;">${x.actualScore}</div>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+// Ordena "Mi selección del día" cronológicamente (día y hora), usando la misma
+// convención de fechas que fixtureKickoffMs. Los picks sin fecha reconocible
+// (p.ej. Champions, que no tiene calendario propio aquí) van al final.
+function pickSortKey(p){
+  if(!p.date) return Infinity;
+  const parts = p.date.split(' ');
+  const day = parseInt(parts[1],10);
+  const month = MONTHS_ES[(parts[2]||'').toLowerCase()];
+  if(month===undefined || isNaN(day)) return Infinity;
+  const time = p.time || '00:00';
+  const bits = time.split(':');
+  const hh = Number(bits[0])||0, mm = Number(bits[1])||0;
+  return Date.UTC(FIXTURES_YEAR, month, day, hh, mm);
+}
+// Recomendación corta de a cuál de los dos marcadores puntuales "jugarle"
+// (apostar en contra de que suceda): el que tiene MENOR probabilidad de pasar
+// es el más probable de que NO pase, así que es el más seguro de jugar.
+// Se mantiene sin números para que la fila en móvil no se ensanche.
+function playHint(p10, p01){
+  if(p10==null || p01==null) return '';
+  if(Math.abs(p10-p01) < 0.01) return 'cualquiera';
+  return p10<p01 ? '1-0' : '0-1';
+}
+function renderPicksList(docs){
+  const summaryEl = document.getElementById('selectionSummary');
+  const listEl = document.getElementById('pickList');
+  const clearRow = document.getElementById('clearRow');
+
+  const picks = docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>pickSortKey(a)-pickSortKey(b));
+
+  // Recalcula qué partidos ya están en la selección y repinta el ranking para
+  // que sus botones "+ Agregar" reflejen ese estado ("✓ Agregado" si ya está).
+  currentPickKeys = new Set(picks.map(p=>pickKey(p.league, p.home, p.away)));
+  renderRanking();
+
+  if(!docs.length){
+    summaryEl.innerHTML = `<p class="empty-note">Todavía no has agregado partidos. Analiza uno en la calculadora de arriba y da clic en "+ Agregar a mi selección del día".</p>`;
+    listEl.innerHTML = '';
+    clearRow.style.display = 'none';
+    return;
+  }
+
+  const weakCount = picks.filter(p=>(p.signal||0) < 0.75).length;
+
+  summaryEl.innerHTML = `
+    <p class="section-note" style="margin-top:0;">
+      <b>${picks.length}</b> partido${picks.length===1?'':'s'} en tu selección.
+      ${weakCount ? `⚠ ${weakCount} por debajo del 75%.` : 'Todos por encima del 75%.'}
+      ${picksUsingLocalFallback ? ' Guardado solo en este dispositivo.' : ''}
+    </p>
+  `;
+
+  listEl.innerHTML = picks.map(p=>{
+    let pcls = p.signal>=0.88 ? 'good' : (p.signal>=0.75 ? 'warn' : 'bad');
+    const resultTag = p.resolved ? (p.hit?' ✅':' ❌') : '';
+    const hint = playHint(p.p10, p.p01);
+    return `<div class="item-card">
+      <div class="item-card-head">
+        <div class="item-card-name">${p.home} vs ${p.away}</div>
+        <button class="pick-remove" data-id="${p.id}" title="Quitar">✕</button>
+      </div>
+      <div class="item-card-stats">
+        <div class="item-stat ${pcls}">
+          <div class="lbl">A favor${resultTag}</div>
+          <div class="val">${pct(p.signal)}</div>
+        </div>
+        <div class="item-stat">
+          <div class="lbl">Juega</div>
+          <div class="val">${hint || '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  clearRow.style.display = '';
+
+  [...listEl.querySelectorAll('.pick-remove')].forEach(btn=>{
+    btn.addEventListener('click', ()=>removePick(btn.dataset.id));
+  });
+
+  // Se dispara al final (no antes) porque resolver un pick puede volver a llamar
+  // a renderPicksList de forma anidada (síncrona) vía su propio onSnapshot; si se
+  // llamara antes de pintar, ese repintado anidado quedaría pisado por el pintado
+  // "viejo" de esta misma llamada al terminar.
+  tryResolvePicks(picks);
+}
+
+// ---------- Tabla de datos ----------
+const tabsEl = document.getElementById('tabs');
+const subtabsEl = document.getElementById('subtabs');
+const tbody = document.getElementById('tableBody');
+let activeLeague = 'Premier League';
+let activeSeason = null;
+
+function renderTabs(){
+  tabsEl.innerHTML = Object.keys(LEAGUES).map(k=>
+    `<button class="tab ${k===activeLeague?'active':''}" data-league="${k}">${k}</button>`
+  ).join('');
+  [...tabsEl.querySelectorAll('.tab')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeLeague = btn.dataset.league;
+      activeSeason = Object.keys(LEAGUES[activeLeague].seasons)[0];
+      renderTabs(); renderSubtabs(); renderTable();
+    });
+  });
+}
+function renderSubtabs(){
+  const seasons = LEAGUES[activeLeague].seasons;
+  const keys = Object.keys(seasons);
+  if(!activeSeason || !seasons[activeSeason]) activeSeason = keys[0];
+  if(keys.length < 2){ subtabsEl.innerHTML=''; subtabsEl.style.display='none'; return; }
+  subtabsEl.style.display='';
+  subtabsEl.innerHTML = keys.map(k=>
+    `<button class="subtab ${k===activeSeason?'active':''}" data-season="${k}">${seasons[k].label.split(' (')[0]}</button>`
+  ).join('');
+  [...subtabsEl.querySelectorAll('.subtab')].forEach(btn=>{
+    btn.addEventListener('click', ()=>{ activeSeason = btn.dataset.season; renderSubtabs(); renderTable(); });
+  });
+}
+function renderTable(){
+  const data = LEAGUES[activeLeague].seasons[activeSeason];
+  const avg = leagueAvgPerTeam(data.teams);
+  const rows = [...data.teams].map(t=>{
+    const ad = attDef(t, avg);
+    return {...t, gfpj:t.gf/t.p, gcpj:t.ga/t.p, att:ad.att, def:ad.def};
+  }).sort((a,b)=>b.gfpj-a.gfpj);
+  tbody.innerHTML = rows.map(t=>`<tr>
+    <td>${t.n}</td><td>${t.p}</td><td>${t.gf}</td><td>${t.ga}</td>
+    <td>${t.gfpj.toFixed(2)}</td><td>${t.gcpj.toFixed(2)}</td>
+    <td>${t.att.toFixed(2)}</td><td>${t.def.toFixed(2)}</td>
+  </tr>`).join('');
+}
+
+// ---------- Modo claro / oscuro ----------
+function applyTheme(mode){
+  if(mode==='light'){ document.documentElement.setAttribute('data-theme','light'); }
+  else if(mode==='dark'){ document.documentElement.setAttribute('data-theme','dark'); }
+  else { document.documentElement.removeAttribute('data-theme'); }
+  const btn = document.getElementById('themeToggle');
+  if(btn){
+    const isDark = mode==='dark' || (mode==='system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    btn.textContent = isDark ? '☀️' : '🌙';
+  }
+}
+function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('soccerIA_theme'); }catch(e){}
+  applyTheme(saved || 'system');
+  const btn = document.getElementById('themeToggle');
+  if(btn){
+    btn.addEventListener('click', ()=>{
+      const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark' ||
+        (!document.documentElement.getAttribute('data-theme') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      const next = isDarkNow ? 'light' : 'dark';
+      try{ localStorage.setItem('soccerIA_theme', next); }catch(e){}
+      applyTheme(next);
+    });
+  }
+}
+
+// ---------- init ----------
+initTheme();
+renderThermometer();
+renderFixtureTabs();
+renderFixtureList();
+renderRankingLimitTabs();
+renderRanking();
+populateCompetitions();
+compSel.value = 'La Liga';
+populateSeasons();
+seasonSel.value = '2026-27';
+populateTeams();
+activeSeason = Object.keys(LEAGUES[activeLeague].seasons)[0];
+renderTabs();
+renderSubtabs();
+renderTable();
+initPicks();
+
+// Registro de service worker: solo aplica cuando la página se publica como
+// PWA independiente (por ejemplo en GitHub Pages) y existe sw.js junto a
+// este archivo. Dentro del entorno de Claude no hay sw.js, así que esto
+// simplemente falla en silencio y no afecta nada.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* no disponible en este entorno, ignorar */ });
+  });
+}
+</script>
+</body>
+</html>
